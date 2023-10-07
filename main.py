@@ -27,6 +27,8 @@ def agregar_sorteo(sorteo_dict):
     amonut_of_winners_loto = sorteo_dict['amonut_of_winners_loto']
     money_per_winner_super_quina = sorteo_dict['money_per_winner_super_quina']
     amonut_of_winners_super_quina = sorteo_dict['amonut_of_winners_super_quina']
+    money_per_winner_quina = sorteo_dict['money_per_winner_quina']
+    amonut_of_winners_quina = sorteo_dict['amonut_of_winners_quina']
 
     # Verificar si el sorteo ya existe
     cursor.execute('SELECT * FROM sorteos WHERE sorteo_id=?', (sorteo_id,))
@@ -35,9 +37,10 @@ def agregar_sorteo(sorteo_dict):
         return False
     
     # Agregar el sorteo
-    cursor.execute('INSERT INTO sorteos (sorteo_id, day, month, year, weekday, ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+    cursor.execute('INSERT INTO sorteos (sorteo_id, day, month, year, weekday, n1_loto, n2_loto, n3_loto, n4_loto, n5_loto, n6_loto comodin,) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
                    (sorteo_id, day, month, year, weekday, n1_loto, n2_loto, n3_loto, n4_loto, n5_loto, n6_loto,
-                    comodin, money_per_winner_loto, amonut_of_winners_loto, money_per_winner_super_quina, amonut_of_winners_super_quina))
+                    comodin, money_per_winner_loto, amonut_of_winners_loto, money_per_winner_super_quina, amonut_of_winners_super_quina,
+                    money_per_winner_quina, amonut_of_winners_quina))
     
     conn.commit()
     conn.close()
