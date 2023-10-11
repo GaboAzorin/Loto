@@ -1,74 +1,11 @@
 import datetime
-import sqlite3
+import time
+from methods import *
+import pyautogui as py
+from GAP_Utils.Utils import Play_end_mp3
 
 # Configuración de la base de datos
 DB_NAME = 'loto.db'
-
-def agregar_sorteo(sorteo_dict):
-    """Agrega un sorteo a la base de datos."""
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    
-    # Verificar si el sorteo ya existe
-    cursor.execute('SELECT * FROM sorteos WHERE sorteo_id=?', (sorteo_dict['sorteo_id'],))
-    if cursor.fetchone():
-        print(f"El sorteo {sorteo_dict['sorteo_id']} ya existe.")
-        return False
-    
-    # Agregar el sorteo
-    campos = ['sorteo_id', 'day', 'month', 'year', 'week_day', 'n1_loto', 'n2_loto', 'n3_loto', 'n4_loto', 'n5_loto', 'n6_loto',
-              'comodin', 'money_per_winner_loto', 'amount_of_winners_loto', 'money_per_winner_super_quina', 'amount_of_winners_super_quina',
-              'money_per_winner_quina', 'amount_of_winners_quina', 'money_per_winner_super_cuaterna', 'amount_of_winners_super_cuaterna',
-              'money_per_winner_cuaterna', 'amount_of_winners_cuaterna', 'money_per_winner_super_terna', 'amount_of_winners_super_terna',
-              'money_per_winner_terna', 'amount_of_winners_terna', 'money_per_winner_super_dupla', 'amount_of_winners_super_dupla',
-              'n1_recargado', 'n2_recargado', 'n3_recargado', 'n4_recargado', 'n5_recargado', 'n6_recargado', 'money_per_winner_recargado',
-              'amount_of_winners_recargado', 'n1_revancha', 'n2_revancha', 'n3_revancha', 'n4_revancha', 'n5_revancha', 'n6_revancha',
-              'money_per_winner_revancha', 'amount_of_winners_revancha', 'n1_desquite', 'n2_desquite', 'n3_desquite', 'n4_desquite',
-              'n5_desquite', 'n6_desquite', 'money_per_winner_desquite', 'amount_of_winners_desquite']
-    valores = [sorteo_dict[campo] for campo in campos]
-    
-    consulta = f"INSERT INTO sorteos ({', '.join(campos)}) VALUES ({', '.join(['?']*len(campos))})"
-    
-    try:
-        cursor.execute(consulta, valores)
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"Error al agregar sorteo: {e}")
-        return False
-    finally:
-        conn.close()
-
-    return True
-
-
-def calcular_sorteos_faltantes(primer_sorteo, primer_numero_sorteo):
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    
-    fecha_actual = datetime.datetime.now()
-    diferencia = fecha_actual - primer_sorteo
-    semanas = diferencia.days // 7
-    total_sorteos = semanas * 3 + (diferencia.days % 7 >= 2) + (diferencia.days % 7 == 6 and fecha_actual.hour >= 21)
-
-    cursor.execute('SELECT MAX(sorteo_id) FROM sorteos')
-    ultimo_sorteo = cursor.fetchone()[0]
-    sorteos_faltantes = total_sorteos - (ultimo_sorteo - primer_numero_sorteo + 1)
-
-    conn.close()
-    return total_sorteos + primer_numero_sorteo, sorteos_faltantes
-
-def mostrar_mensaje_bienvenida(primer_sorteo, primer_numero_sorteo):
-    fecha_actual = datetime.datetime.now()
-    proximo_sorteo, faltantes = calcular_sorteos_faltantes(primer_sorteo, primer_numero_sorteo)
-    
-    mensaje = f"Bienvenido. Hoy es {fecha_actual.strftime('%d/%m/%Y')}, y son las {fecha_actual.strftime('%H:%M')}. "
-    if fecha_actual.weekday() in [1, 3, 6] and fecha_actual.hour < 21:
-        mensaje += f"Hoy a las 21:00 se lanzará el sorteo número {proximo_sorteo}. "
-    else:
-        mensaje += f"El próximo sorteo será el número {proximo_sorteo}. "
-    mensaje += f"A tu base de datos le faltan {faltantes} sorteos."
-    
-    print(mensaje)
 
 
 # Fecha del primer sorteo y su número
@@ -76,7 +13,7 @@ primer_sorteo = datetime.datetime(2016, 1, 3, 21, 0)
 primer_numero_sorteo = 3803
 
 # Mostrar mensaje
-mostrar_mensaje_bienvenida(primer_sorteo, primer_numero_sorteo)
+mostrar_mensaje_bienvenida(primer_sorteo, primer_numero_sorteo, DB_NAME)
 
 sorteo = {
 	'sorteo_id': 3803,
@@ -133,4 +70,22 @@ sorteo = {
 	'amount_of_winners_desquite': 0,
 }
 
-agregar_sorteo(sorteo)
+time.sleep(1)
+
+prepare_screen()
+all_text, list_of_sorteos = get_screen_info()
+if len(list_of_sorteos) == 10:
+	py.moveTo(990, 365)
+else:
+	py.moveTo(990, 418)
+
+for i, sorteo in enumerate(list_of_sorteos):
+	if i <= (len(list_of_sorteos)-2):
+		time.sleep(1)
+		if check_if_id_is_in_db(sorteo, DB_NAME):
+			#agregar_sorteo(get_info_from_sorteo())
+			get_info_from_sorteo()
+		py.moveRel(0,53)
+
+#agregar_sorteo(sorteo, DB_NAME)
+Play_end_mp3()
