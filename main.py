@@ -80,11 +80,12 @@ else:
 	py.moveTo(990, 418)
 
 for i, sorteo in enumerate(list_of_sorteos):
-	if i <= (len(list_of_sorteos)-2):
-		time.sleep(1)
+	#if i <= (len(list_of_sorteos)-1):
+	if i <= 1:
+		time.sleep(0.5)
 		if check_if_id_is_in_db(sorteo, DB_NAME):
 			#agregar_sorteo(get_info_from_sorteo())
-			get_info_from_sorteo()
+			print(get_info_from_sorteo())
 		py.moveRel(0,53)
 
 #agregar_sorteo(sorteo, DB_NAME)

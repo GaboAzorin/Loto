@@ -3,7 +3,7 @@ import time
 import pyautogui as py
 import datetime
 import pyperclip as pc
-from GAP_Utils.Utils import time_elapsed
+import re
 
 def agregar_sorteo(sorteo_dict, DB_NAME):
     """Agrega un sorteo a la base de datos."""
@@ -67,6 +67,7 @@ def mostrar_mensaje_bienvenida(primer_sorteo, primer_numero_sorteo, DB_NAME):
     else:
         mensaje += f"El próximo sorteo será el número {proximo_sorteo}. "
     mensaje += f"A tu base de datos le faltan {faltantes} sorteos."
+    print('------ ----- ---- --- -- -    - -- --- ---- ----- ------\n')
     
     print(mensaje)
 
@@ -162,17 +163,104 @@ def crear_db(DB_NAME):
     conn.commit()
     conn.close()
 
+def crear_dict_sorteo(lista):
+    sorteo_dict = {
+        'sorteo_id': lista[0],
+        'day': lista[1][0],
+        'month': lista[1][1],
+        'year': lista[1][2],
+        'week_day': lista[1][3]
+    }
+    
+    # Función auxiliar para extraer los números y agregarlos al diccionario
+    def extraer_numeros(prefix, start_index):
+        for i in range(6):
+            print(lista[start_index][i])
+            sorteo_dict[f'n{i+1}_{prefix}'] = lista[start_index][i]
+        print('ESPACIO')
+    
+    # Función auxiliar para extraer la información monetaria y de ganadores
+    def extraer_info_financiera(prefix, keyword):
+        index = lista.index(keyword) + 1
+        sorteo_dict[f'money_per_winner_{prefix}'] = lista[index]
+        sorteo_dict[f'amount_of_winners_{prefix}'] = lista[index + 1]
+
+    extraer_numeros('loto', 2)
+    sorteo_dict['comodin'] = lista[8]
+    extraer_numeros('recargado', 10)
+    extraer_numeros('revancha', 17)
+    extraer_numeros('desquite', 24)
+
+    # Extrayendo información monetaria y de ganadores
+    extraer_info_financiera('loto', 'LOTO 6 aciertos')
+    extraer_info_financiera('super_quina', 'Súper Quina 5 aciertos + comodín')
+    extraer_info_financiera('quina', 'Quina 5 aciertos')
+    extraer_info_financiera('super_cuaterna', 'Súper Cuaterna 4 aciertos + comodín')
+    extraer_info_financiera('cuaterna', 'Cuaterna 4 aciertos')
+    extraer_info_financiera('super_terna', 'Súper Terna 3 aciertos + comodín')
+    extraer_info_financiera('terna', 'Terna 3 aciertos')
+    extraer_info_financiera('super_dupla', 'Súper Dupla 2 aciertos + comodín')
+    extraer_info_financiera('recargado', 'RECARGADO 6 aciertos')
+    extraer_info_financiera('revancha', lista[-8])
+    extraer_info_financiera('desquite', lista[-2])
+
+    return sorteo_dict
+
+def extract_date_sublist(element):
+    meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+    fecha_info = re.search(r'(\w+), (\d+) de (\w+) de (\d+)', element)
+    mes = meses.index(fecha_info.group(3)) + 1
+    return [int(fecha_info.group(2)), mes, int(fecha_info.group(4)), fecha_info.group(1)]
+
 def get_info_from_sorteo():
     py.click()
+    time.sleep(1)
     py.hotkey('ctrl', 'a')
     py.hotkey('ctrl', 'c')
     time.sleep(0.5)
     py.click()
     all_text = str(pc.paste())
-    text_in_the_middle = all_text[all_text.find('Resultados del sorteo')+len('Resultados del sorteo'):all_text.find('Jubilazo')]
-    text_in_the_middle = text_in_the_middle.replace('\r', '')
-    text_in_the_middle = text_in_the_middle.split('\n')
-    print(text_in_the_middle)
+    sorteo_content_list = all_text[all_text.find('Resultados del sorteo')+len('Resultados del sorteo'):all_text.find('Siguiente página')]
+    sorteo_content_list = sorteo_content_list.replace('\r', '')
+    sorteo_content_list = sorteo_content_list.replace('\t', '')
+    sorteo_content_list = sorteo_content_list.replace('$', '')
+    sorteo_content_list = sorteo_content_list.replace('.', '')
+    sorteo_content_list = sorteo_content_list.replace('Sorteo # ', '')
+    sorteo_content_list = sorteo_content_list.split('\n')
+    for element in sorteo_content_list:
+        if 'Números ganadores' in element:
+            sorteo_content_list.remove(element)
+    # Eliminar varios elementos de la lista que no se ocuparán
+    sorteo_content_list.pop(0)
+    # Eliminamos todos los elementos desde el segundo elemento después de 'DESQUITE' hasta el final de la lista
+    index_primero_desquite = sorteo_content_list.index('DESQUITE')
+    index_segundo_desquite = sorteo_content_list.index('DESQUITE', index_primero_desquite + 1)
+    del sorteo_content_list[index_segundo_desquite + 3:]
+
+    inicio = sorteo_content_list.index('JUBILAZO')
+    fin = sorteo_content_list.index('DivisiónMontoGanadores')
+    del sorteo_content_list[inicio:fin]
+
+    def is_number_sequence(s):
+        parts = s.split()
+        return len(parts) > 1 and all(x.isdigit() for x in parts)
+
+    # Recorrer la lista y hacer las transformaciones requeridas
+    nueva_lista = []
+    for item in sorteo_content_list:
+        if is_number_sequence(item):
+            nueva_lista.append(list(map(int, item.split())))
+        elif item.isdigit():
+            nueva_lista.append(int(item))
+        else:
+            nueva_lista.append(item)
+
+    sorteo_content_list = list(nueva_lista)
+    sorteo_content_list[1] = extract_date_sublist(sorteo_content_list[1])
+
+    sorteo_content_dict = crear_dict_sorteo(sorteo_content_list)
+
+    return sorteo_content_dict
 
 def prepare_screen():
     py.moveTo(990, 540)
