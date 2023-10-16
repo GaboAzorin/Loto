@@ -2,7 +2,8 @@ import datetime
 import time
 from methods import *
 import pyautogui as py
-from GAP_Utils.Utils import Play_end_mp3
+import time
+from GAP_Utils.Utils import Play_end_mp3, click_button_on_screen, time_elapsed
 
 # Configuración de la base de datos
 DB_NAME = 'loto.db'
@@ -72,6 +73,7 @@ sorteo = {
 
 time.sleep(1)
 
+a = time.time()
 prepare_screen()
 all_text, list_of_sorteos = get_screen_info()
 if len(list_of_sorteos) == 10:
@@ -79,14 +81,27 @@ if len(list_of_sorteos) == 10:
 else:
 	py.moveTo(990, 418)
 
-for i, sorteo in enumerate(list_of_sorteos):
-	#if i <= (len(list_of_sorteos)-1):
-	if i <= 1:
-		time.sleep(0.5)
-		if check_if_id_is_in_db(sorteo, DB_NAME):
-			#agregar_sorteo(get_info_from_sorteo())
-			print(get_info_from_sorteo())
-		py.moveRel(0,53)
+for a in range(300):
+	c = time.time()
+	for i, sorteo in enumerate(list_of_sorteos):
+		if i <= (len(list_of_sorteos)-1):
+			time.sleep(2)
+			if check_if_id_is_in_db(sorteo, DB_NAME):
+				agregar_sorteo(get_info_from_sorteo(), DB_NAME)
+				#print(get_info_from_sorteo())
+			py.moveRel(0,53)
+	click_button_on_screen('boton.png')
+	time.sleep(2)
+	py.scroll(2000)
+	prepare_screen()
+	all_text, list_of_sorteos = get_screen_info()
+	if len(list_of_sorteos) == 10:
+		py.moveTo(990, 365)
+	else:
+		py.moveTo(990, 418)
+	d = time.time()
+	print(f'Tiempo de esta página: {time_elapsed(c, d)}.')
 
-#agregar_sorteo(sorteo, DB_NAME)
+b = time.time()
+print(f'Tiempo total de programa: {time_elapsed(a, b)}.')
 Play_end_mp3()

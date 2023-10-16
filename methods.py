@@ -163,48 +163,52 @@ def crear_db(DB_NAME):
     conn.commit()
     conn.close()
 
-def crear_dict_sorteo(lista):
-    sorteo_dict = {
-        'sorteo_id': lista[0],
-        'day': lista[1][0],
-        'month': lista[1][1],
-        'year': lista[1][2],
-        'week_day': lista[1][3]
+def crear_dict_sorteo(data_list):
+    # Iniciar el diccionario vacío
+    sorteo = {}
+
+    # Extracción de la información
+    sorteo['sorteo_id'] = data_list[0]
+    sorteo['day'] = data_list[1][0]
+    sorteo['month'] = data_list[1][1]
+    sorteo['year'] = data_list[1][2]
+    sorteo['week_day'] = data_list[1][3]
+
+    for i, num in enumerate(data_list[2]):
+        sorteo[f'n{i+1}_loto'] = num
+
+    sorteo['comodin'] = data_list[3]
+
+    def extract_numbers(game_name, start_index):
+        for i, num in enumerate(data_list[start_index]):
+            sorteo[f'n{i+1}_{game_name}'] = num
+
+    extract_numbers('recargado', 5)
+    extract_numbers('revancha', 7)
+    extract_numbers('desquite', 9)
+
+    # Extracción de información de premios
+    prizes = {
+        'LOTO 6 aciertos': ['money_per_winner_loto', 'amount_of_winners_loto'],
+        'Súper Quina 5 aciertos + comodín': ['money_per_winner_super_quina', 'amount_of_winners_super_quina'],
+        'Quina 5 aciertos': ['money_per_winner_quina', 'amount_of_winners_quina'],
+        'Súper Cuaterna 4 aciertos + comodín': ['money_per_winner_super_cuaterna', 'amount_of_winners_super_cuaterna'],
+        'Cuaterna 4 aciertos': ['money_per_winner_cuaterna', 'amount_of_winners_cuaterna'],
+        'Súper Terna 3 aciertos + comodín': ['money_per_winner_super_terna', 'amount_of_winners_super_terna'],
+        'Terna 3 aciertos': ['money_per_winner_terna', 'amount_of_winners_terna'],
+        'Súper Dupla 2 aciertos + comodín': ['money_per_winner_super_dupla', 'amount_of_winners_super_dupla'],
+        'RECARGADO 6 aciertos': ['money_per_winner_recargado', 'amount_of_winners_recargado'],
+        'REVANCHA': ['money_per_winner_revancha', 'amount_of_winners_revancha'],
+        'DESQUITE': ['money_per_winner_desquite', 'amount_of_winners_desquite'],
     }
-    
-    # Función auxiliar para extraer los números y agregarlos al diccionario
-    def extraer_numeros(prefix, start_index):
-        for i in range(6):
-            print(lista[start_index][i])
-            sorteo_dict[f'n{i+1}_{prefix}'] = lista[start_index][i]
-        print('ESPACIO')
-    
-    # Función auxiliar para extraer la información monetaria y de ganadores
-    def extraer_info_financiera(prefix, keyword):
-        index = lista.index(keyword) + 1
-        sorteo_dict[f'money_per_winner_{prefix}'] = lista[index]
-        sorteo_dict[f'amount_of_winners_{prefix}'] = lista[index + 1]
 
-    extraer_numeros('loto', 2)
-    sorteo_dict['comodin'] = lista[8]
-    extraer_numeros('recargado', 10)
-    extraer_numeros('revancha', 17)
-    extraer_numeros('desquite', 24)
+    for idx, item in enumerate(data_list):
+        if not isinstance(item, list):
+            if item in prizes:
+                sorteo[prizes[item][0]] = data_list[idx + 1]
+                sorteo[prizes[item][1]] = data_list[idx + 2]
 
-    # Extrayendo información monetaria y de ganadores
-    extraer_info_financiera('loto', 'LOTO 6 aciertos')
-    extraer_info_financiera('super_quina', 'Súper Quina 5 aciertos + comodín')
-    extraer_info_financiera('quina', 'Quina 5 aciertos')
-    extraer_info_financiera('super_cuaterna', 'Súper Cuaterna 4 aciertos + comodín')
-    extraer_info_financiera('cuaterna', 'Cuaterna 4 aciertos')
-    extraer_info_financiera('super_terna', 'Súper Terna 3 aciertos + comodín')
-    extraer_info_financiera('terna', 'Terna 3 aciertos')
-    extraer_info_financiera('super_dupla', 'Súper Dupla 2 aciertos + comodín')
-    extraer_info_financiera('recargado', 'RECARGADO 6 aciertos')
-    extraer_info_financiera('revancha', lista[-8])
-    extraer_info_financiera('desquite', lista[-2])
-
-    return sorteo_dict
+    return sorteo
 
 def extract_date_sublist(element):
     meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
