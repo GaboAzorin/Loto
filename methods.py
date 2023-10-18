@@ -4,6 +4,41 @@ import pyautogui as py
 import datetime
 import pyperclip as pc
 import re
+from GAP_Utils.Utils import Play_end_mp3, click_button_on_screen, time_elapsed
+
+def add_sorteos_varios(turns: int, DB_NAME):
+    a = time.time()
+    prepare_screen()
+    all_text, list_of_sorteos = get_screen_info()
+    if len(list_of_sorteos) == 10:
+        py.moveTo(990, 365)
+    else:
+        py.moveTo(990, 418)
+
+    for i2 in range(turns):
+        c = time.time()
+        for i, sorteo in enumerate(list_of_sorteos):
+            if i <= (len(list_of_sorteos)-1):
+                time.sleep(2)
+                if check_if_id_is_in_db(sorteo, DB_NAME):
+                    agregar_sorteo(get_info_from_sorteo(), DB_NAME)
+                    #print(get_info_from_sorteo())
+                py.moveRel(0,53)
+        click_button_on_screen('boton.png')
+        time.sleep(2)
+        py.scroll(2000)
+        prepare_screen()
+        all_text, list_of_sorteos = get_screen_info()
+        if len(list_of_sorteos) == 10:
+            py.moveTo(990, 365)
+        else:
+            py.moveTo(990, 418)
+        d = time.time()
+        print(f'Tiempo de esta página: {time_elapsed(c, d)}.')
+
+    b = time.time()
+    print(f'Tiempo total de programa: {time_elapsed(a, b)}.')
+    Play_end_mp3()
 
 def agregar_sorteo(sorteo_dict, DB_NAME):
     """Agrega un sorteo a la base de datos."""
@@ -40,6 +75,40 @@ def agregar_sorteo(sorteo_dict, DB_NAME):
         conn.close()
 
     return True
+
+def calcular_dia_siguiente():
+    # Definir días de sorteo y hora de sorteo
+    dias_sorteo = ['martes', 'jueves', 'domingo']
+    hora_sorteo = datetime.time(21, 0)
+
+    # Obtener el día y hora actual
+    ahora = datetime.datetime.now()
+    dia_actual = ahora.strftime('%A').lower()  # esto devuelve el día de la semana en inglés
+    hora_actual = ahora.time()
+
+    # Diccionario para traducir los días al español
+    traductor_dias = {
+        'monday': 'lunes',
+        'tuesday': 'martes',
+        'wednesday': 'miércoles',
+        'thursday': 'jueves',
+        'friday': 'viernes',
+        'saturday': 'sábado',
+        'sunday': 'domingo'
+    }
+
+    dia_actual_espanol = traductor_dias[dia_actual]
+
+    # Si hoy es día de sorteo y aún no ha llegado la hora del sorteo
+    if dia_actual_espanol in dias_sorteo and hora_actual < hora_sorteo:
+        return dia_actual_espanol
+
+    # Si no, buscamos el siguiente día de sorteo
+    idx_actual = dias_sorteo.index(dia_actual_espanol) if dia_actual_espanol in dias_sorteo else -1
+    for i in range(1, len(dias_sorteo) + 1):
+        siguiente_idx = (idx_actual + i) % len(dias_sorteo)
+        if dias_sorteo[siguiente_idx] != dia_actual_espanol:
+            return dias_sorteo[siguiente_idx]
 
 def calcular_sorteos_faltantes(primer_sorteo, primer_numero_sorteo, DB_NAME):
     conn = sqlite3.connect(DB_NAME)
