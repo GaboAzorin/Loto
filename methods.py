@@ -273,39 +273,27 @@ def crear_db(DB_NAME):
     conn.close()
 
 def crear_dict_sorteo(data_list, other_list):
-    # Iniciar el diccionario vacío
-    sorteo = {}
+    diccionario = {}
+    clave_base = None
+    sufijo = 1
 
-    # Extracción de la información
-    sorteo['sorteo_id'] = data_list[0]
-    sorteo['day'] = data_list[1]
-    sorteo['month'] = data_list[2]
-    sorteo['year'] = data_list[3]
-    sorteo['week_day'] = data_list[4]
-    def prepare_6_nums(pre_list):
-        final_list = pre_list.split(' ')
-        return final_list
-    for i, num in enumerate(prepare_6_nums(data_list[5])):
-        sorteo[f'n{i+1}_loto'] = num
-
-    sorteo['comodin'] = data_list[7]
-
-    def replace_spaces(name):
-        name = name.replace(' ', '_')
-
-    name_of_category = ''
-    for i, rest_of_data in enumerate(data_list[8:len(data_list)]):
-        if rest_of_data.isalpha():
-            name_of_category = rest_of_data
+    for elemento in data_list:
+        # Si el elemento es alfabético
+        if elemento.isalpha():
+            clave_base = elemento
+            sufijo = 1
+        # Si el elemento es numérico
         else:
-            for i2, num in enumerate(prepare_6_nums(data_list[i+1])):
-                sorteo[f'n{i2+1}_{replace_spaces(name_of_category)}'] = num
-                print(num)
-
-
-    print(sorteo)
-
-    return sorteo
+            numeros = elemento.split(' ')
+            for idx, num in enumerate(numeros, 1):
+                if sufijo == 1:
+                    diccionario[f"n{idx}_{clave_base}"] = int(num)
+                else:
+                    diccionario[f"n{idx}_{clave_base}_{sufijo}"] = int(num)
+            sufijo += 1
+        if elemento == "MULTIPLICAR":
+            break
+    return diccionario
 
 def extract_date_sublist(element):
     meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
