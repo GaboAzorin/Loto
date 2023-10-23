@@ -41,40 +41,41 @@ def add_sorteos_varios(turns: int, DB_NAME):
     Play_end_mp3()
 
 def agregar_sorteo(sorteo_dict, DB_NAME):
-    """Agrega un sorteo a la base de datos."""
+    """
+    Inserta datos desde un diccionario en una tabla SQL, creando columnas adicionales si es necesario.
+
+    DB_NAME: Ruta de la base de datos SQLite.
+    table_name: Nombre de la tabla donde insertar los datos.
+    data_dict: Diccionario con claves (nombres de columnas) y valores a insertar.
+    """
+    # Conexión a la base de datos
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    
-    # Verificar si el sorteo ya existe
-    cursor.execute('SELECT * FROM sorteos WHERE sorteo_id=?', (sorteo_dict['sorteo_id'],))
-    if cursor.fetchone():
-        print(f"El sorteo {sorteo_dict['sorteo_id']} ya existe.")
-        return False
-    
-    # Agregar el sorteo
-    campos = ['sorteo_id', 'day', 'month', 'year', 'week_day', 'n1_loto', 'n2_loto', 'n3_loto', 'n4_loto', 'n5_loto', 'n6_loto',
-              'comodin', 'money_per_winner_loto', 'amount_of_winners_loto', 'money_per_winner_super_quina', 'amount_of_winners_super_quina',
-              'money_per_winner_quina', 'amount_of_winners_quina', 'money_per_winner_super_cuaterna', 'amount_of_winners_super_cuaterna',
-              'money_per_winner_cuaterna', 'amount_of_winners_cuaterna', 'money_per_winner_super_terna', 'amount_of_winners_super_terna',
-              'money_per_winner_terna', 'amount_of_winners_terna', 'money_per_winner_super_dupla', 'amount_of_winners_super_dupla',
-              'n1_recargado', 'n2_recargado', 'n3_recargado', 'n4_recargado', 'n5_recargado', 'n6_recargado', 'money_per_winner_recargado',
-              'amount_of_winners_recargado', 'n1_revancha', 'n2_revancha', 'n3_revancha', 'n4_revancha', 'n5_revancha', 'n6_revancha',
-              'money_per_winner_revancha', 'amount_of_winners_revancha', 'n1_desquite', 'n2_desquite', 'n3_desquite', 'n4_desquite',
-              'n5_desquite', 'n6_desquite', 'money_per_winner_desquite', 'amount_of_winners_desquite']
-    valores = [sorteo_dict[campo] for campo in campos]
-    
-    consulta = f"INSERT INTO sorteos ({', '.join(campos)}) VALUES ({', '.join(['?']*len(campos))})"
-    
-    try:
-        cursor.execute(consulta, valores)
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"Error al agregar sorteo: {e}")
-        return False
-    finally:
-        conn.close()
 
-    return True
+    # Obtener las columnas de la tabla
+    cursor.execute(f"PRAGMA table_info({'sorteos'})")
+    columns_info = cursor.fetchall()
+    columns_names = [column[1] for column in columns_info]
+
+    # Verificar qué columnas no existen y agregarlas
+    for key in sorteo_dict.keys():
+        if key not in columns_names:
+            alter_query = f"ALTER TABLE {'sorteos'} ADD COLUMN {key}"
+            cursor.execute(alter_query)
+            columns_names.append(key)  # Actualizar la lista de columnas
+
+    # Preparar las claves y los valores para la sentencia SQL
+    keys = ", ".join(columns_names)
+    values = [sorteo_dict.get(col, None) for col in columns_names]
+    placeholders = ", ".join(["?" for _ in columns_names])
+
+    # Insertar datos
+    insert_query = f"INSERT INTO {'sorteos'} ({keys}) VALUES ({placeholders})"
+    cursor.execute(insert_query, values)
+
+    # Guardar cambios y cerrar conexión
+    conn.commit()
+    conn.close()
 
 def calcular_dia_siguiente():
     # Definir días de sorteo y hora de sorteo
@@ -109,6 +110,45 @@ def calcular_dia_siguiente():
         siguiente_idx = (idx_actual + i) % len(dias_sorteo)
         if dias_sorteo[siguiente_idx] != dia_actual_espanol:
             return dias_sorteo[siguiente_idx]
+
+def calcular_dia_siguiente_numerico():
+    # Definir días de sorteo
+    dias_sorteo = ['martes', 'jueves', 'domingo']
+
+    # Hora del sorteo
+    hora_sorteo = datetime.time(21, 0)
+
+    # Obtener el día y hora actual
+    ahora = datetime.datetime.now()
+    dia_actual = ahora.strftime('%A').lower()  # esto devuelve el día de la semana en inglés
+    hora_actual = ahora.time()
+
+    # Diccionario para traducir los días al español
+    traductor_dias = {
+        'monday': 'lunes',
+        'tuesday': 'martes',
+        'wednesday': 'miércoles',
+        'thursday': 'jueves',
+        'friday': 'viernes',
+        'saturday': 'sábado',
+        'sunday': 'domingo'
+    }
+
+    dia_actual_espanol = traductor_dias[dia_actual]
+
+    # Si hoy es día de sorteo y aún no ha llegado la hora del sorteo
+    if dia_actual_espanol in dias_sorteo and hora_actual < hora_sorteo:
+        return ahora.day  # Retorna el día actual en número
+
+    # Si no, calculamos el siguiente día de sorteo
+    un_dia = datetime.timedelta(days=1)  # Intervalo de un día
+    siguiente_fecha = ahora + un_dia
+
+    # Iteramos hasta encontrar el siguiente día de sorteo
+    while traductor_dias[siguiente_fecha.strftime('%A').lower()] not in dias_sorteo:
+        siguiente_fecha += un_dia
+
+    return siguiente_fecha.day
 
 def calcular_sorteos_faltantes(primer_sorteo, primer_numero_sorteo, DB_NAME):
     conn = sqlite3.connect(DB_NAME)
@@ -186,96 +226,81 @@ def crear_db(DB_NAME):
         n5_loto INTEGER,
         n6_loto INTEGER,
         comodin INTEGER,
-        money_per_winner_loto INTEGER,
-        amount_of_winners_loto INTEGER,
-	    money_per_winner_super_quina INTEGER,
-	    amount_of_winners_super_quina INTEGER,
-	    money_per_winner_quina INTEGER,
-	    amount_of_winners_quina INTEGER,
-	    money_per_winner_super_cuaterna INTEGER,
-	    amount_of_winners_super_cuaterna INTEGER,
-	    money_per_winner_cuaterna INTEGER,
-	    amount_of_winners_cuaterna INTEGER,
-	    money_per_winner_super_terna INTEGER,
-	    amount_of_winners_super_terna INTEGER,
-	    money_per_winner_terna INTEGER,
-	    amount_of_winners_terna INTEGER,
-	    money_per_winner_super_dupla INTEGER,
-	    amount_of_winners_super_dupla INTEGER,
-	    n1_recargado INTEGER,
-        n2_recargado INTEGER,
-        n3_recargado INTEGER,
-        n4_recargado INTEGER,
-        n5_recargado INTEGER,
-        n6_recargado INTEGER,
-    	money_per_winner_recargado INTEGER,
-	    amount_of_winners_recargado INTEGER,
-        n1_revancha INTEGER,
-        n2_revancha INTEGER,
-        n3_revancha INTEGER,
-        n4_revancha INTEGER,
-        n5_revancha INTEGER,
-        n6_revancha INTEGER,
-    	money_per_winner_revancha INTEGER,
-	    amount_of_winners_revancha INTEGER,
-        n1_desquite INTEGER,
-        n2_desquite INTEGER,
-        n3_desquite INTEGER,
-        n4_desquite INTEGER,
-        n5_desquite INTEGER,
-        n6_desquite INTEGER,
-    	money_per_winner_desquite INTEGER,
-	    amount_of_winners_desquite INTEGER
+        mpw_loto INTEGER,
+        aow_loto INTEGER,
+	    mpw_super_quina INTEGER,
+	    aow_super_quina INTEGER,
+	    mpw_quina INTEGER,
+	    aow_quina INTEGER,
+	    mpw_super_cuaterna INTEGER,
+	    aow_super_cuaterna INTEGER,
+	    mpw_cuaterna INTEGER,
+	    aow_cuaterna INTEGER,
+	    mpw_super_terna INTEGER,
+	    aow_super_terna INTEGER,
+	    mpw_terna INTEGER,
+	    aow_terna INTEGER,
+	    mpw_super_dupla INTEGER,
+	    aow_super_dupla INTEGER,
+	    n1_RECARGADO INTEGER,
+        n2_RECARGADO INTEGER,
+        n3_RECARGADO INTEGER,
+        n4_RECARGADO INTEGER,
+        n5_RECARGADO INTEGER,
+        n6_RECARGADO INTEGER,
+    	mpw_RECARGADO INTEGER,
+	    aow_RECARGADO INTEGER,
+        n1_REVANCHA INTEGER,
+        n2_REVANCHA INTEGER,
+        n3_REVANCHA INTEGER,
+        n4_REVANCHA INTEGER,
+        n5_REVANCHA INTEGER,
+        n6_REVANCHA INTEGER,
+    	mpw_REVANCHA INTEGER,
+	    aow_REVANCHA INTEGER,
+        n1_DESQUITE INTEGER,
+        n2_DESQUITE INTEGER,
+        n3_DESQUITE INTEGER,
+        n4_DESQUITE INTEGER,
+        n5_DESQUITE INTEGER,
+        n6_DESQUITE INTEGER,
+    	mpw_DESQUITE INTEGER,
+	    aow_DESQUITE INTEGER
     )
     ''')
     
     conn.commit()
     conn.close()
 
-def crear_dict_sorteo(data_list):
+def crear_dict_sorteo(data_list, other_list):
     # Iniciar el diccionario vacío
     sorteo = {}
 
     # Extracción de la información
     sorteo['sorteo_id'] = data_list[0]
-    sorteo['day'] = data_list[1][0]
-    sorteo['month'] = data_list[1][1]
-    sorteo['year'] = data_list[1][2]
-    sorteo['week_day'] = data_list[1][3]
-
-    for i, num in enumerate(data_list[2]):
+    sorteo['day'] = data_list[1]
+    sorteo['month'] = data_list[2]
+    sorteo['year'] = data_list[3]
+    sorteo['week_day'] = data_list[4]
+    def prepare_6_nums(pre_list):
+        final_list = pre_list.split(' ')
+        return final_list
+    for i, num in enumerate(prepare_6_nums(data_list[5])):
         sorteo[f'n{i+1}_loto'] = num
 
-    sorteo['comodin'] = data_list[3]
+    sorteo['comodin'] = data_list[7]
 
-    def extract_numbers(game_name, start_index):
-        for i, num in enumerate(data_list[start_index]):
-            sorteo[f'n{i+1}_{game_name}'] = num
+    def replace_spaces(name):
+        name = name.replace(' ', '_')
 
-    extract_numbers('recargado', 5)
-    extract_numbers('revancha', 7)
-    extract_numbers('desquite', 9)
+    for i, rest_of_data in enumerate(data_list[8:len(data_list)]):
+        if i % 2 == 0 and rest_of_data:
+            for i2, num in enumerate(prepare_6_nums(data_list[i+1])):
+                sorteo[f'n{i2+1}_{replace_spaces(rest_of_data)}'] = num
+                print(num)
 
-    # Extracción de información de premios
-    prizes = {
-        'LOTO 6 aciertos': ['money_per_winner_loto', 'amount_of_winners_loto'],
-        'Súper Quina 5 aciertos + comodín': ['money_per_winner_super_quina', 'amount_of_winners_super_quina'],
-        'Quina 5 aciertos': ['money_per_winner_quina', 'amount_of_winners_quina'],
-        'Súper Cuaterna 4 aciertos + comodín': ['money_per_winner_super_cuaterna', 'amount_of_winners_super_cuaterna'],
-        'Cuaterna 4 aciertos': ['money_per_winner_cuaterna', 'amount_of_winners_cuaterna'],
-        'Súper Terna 3 aciertos + comodín': ['money_per_winner_super_terna', 'amount_of_winners_super_terna'],
-        'Terna 3 aciertos': ['money_per_winner_terna', 'amount_of_winners_terna'],
-        'Súper Dupla 2 aciertos + comodín': ['money_per_winner_super_dupla', 'amount_of_winners_super_dupla'],
-        'RECARGADO 6 aciertos': ['money_per_winner_recargado', 'amount_of_winners_recargado'],
-        'REVANCHA': ['money_per_winner_revancha', 'amount_of_winners_revancha'],
-        'DESQUITE': ['money_per_winner_desquite', 'amount_of_winners_desquite'],
-    }
 
-    for idx, item in enumerate(data_list):
-        if not isinstance(item, list):
-            if item in prizes:
-                sorteo[prizes[item][0]] = data_list[idx + 1]
-                sorteo[prizes[item][1]] = data_list[idx + 2]
+    print(sorteo)
 
     return sorteo
 
@@ -300,40 +325,25 @@ def get_info_from_sorteo():
     sorteo_content_list = sorteo_content_list.replace('.', '')
     sorteo_content_list = sorteo_content_list.replace('Sorteo # ', '')
     sorteo_content_list = sorteo_content_list.split('\n')
-    for element in sorteo_content_list:
-        if 'Números ganadores' in element:
+    index_primer_loto = sorteo_content_list.index('LOTO')
+    del sorteo_content_list[index_primer_loto:]
+    for i, element in enumerate(sorteo_content_list):
+        if 'Números ganadoresComodin' in element:
+            sorteo_content_list[i] = 'Comodin'
+        elif 'Números ganadores' in element:
             sorteo_content_list.remove(element)
     # Eliminar varios elementos de la lista que no se ocuparán
     sorteo_content_list.pop(0)
-    # Eliminamos todos los elementos desde el segundo elemento después de 'DESQUITE' hasta el final de la lista
-    index_primero_desquite = sorteo_content_list.index('DESQUITE')
-    index_segundo_desquite = sorteo_content_list.index('DESQUITE', index_primero_desquite + 1)
-    del sorteo_content_list[index_segundo_desquite + 3:]
-
-    inicio = sorteo_content_list.index('JUBILAZO')
-    fin = sorteo_content_list.index('DivisiónMontoGanadores')
-    del sorteo_content_list[inicio:fin]
-
-    def is_number_sequence(s):
-        parts = s.split()
-        return len(parts) > 1 and all(x.isdigit() for x in parts)
-
-    # Recorrer la lista y hacer las transformaciones requeridas
-    nueva_lista = []
-    for item in sorteo_content_list:
-        if is_number_sequence(item):
-            nueva_lista.append(list(map(int, item.split())))
-        elif item.isdigit():
-            nueva_lista.append(int(item))
-        else:
-            nueva_lista.append(item)
-
-    sorteo_content_list = list(nueva_lista)
-    sorteo_content_list[1] = extract_date_sublist(sorteo_content_list[1])
-
-    sorteo_content_dict = crear_dict_sorteo(sorteo_content_list)
-
-    return sorteo_content_dict
+    comodin = sorteo_content_list.pop(2)
+    sorteo_content_list.insert(3, comodin)
+    date_elements = extract_date_sublist(sorteo_content_list[1])
+    del sorteo_content_list[1]
+    sorteo_content_list[1:1] = date_elements
+    # Ahora se separa todo en dos listas
+    results = sorteo_content_list[:sorteo_content_list.index('DivisiónMontoGanadores')]
+    winners_and_amounts = sorteo_content_list[sorteo_content_list.index('DivisiónMontoGanadores')+1:]
+    dict_final = crear_dict_sorteo(results, winners_and_amounts)
+    exit()
 
 def prepare_screen():
     py.moveTo(990, 540)
