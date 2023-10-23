@@ -293,6 +293,15 @@ def crear_dict_sorteo(data_list, other_list):
             sufijo += 1
         if elemento == "MULTIPLICAR":
             break
+    #2da parte
+    clave_base = None
+
+    for i in range(0, len(other_list), 3):
+        if isinstance(other_list[i], str):
+            clave_base = other_list[i].replace(" ", "_")
+            diccionario[f"mpw_{clave_base}"] = lista[i+1]
+            diccionario[f"aow_{clave_base}"] = lista[i+2]
+
     return diccionario
 
 def extract_date_sublist(element):
