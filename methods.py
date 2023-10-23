@@ -198,7 +198,7 @@ def check_if_id_is_in_db(id_a_verificar, DB_NAME):
 
         if resultado:
             # El ID está en la base de datos, realiza la acción correspondiente
-            print(f'El sorteo {id_a_verificar} sí está.')
+            print(f'El sorteo {id_a_verificar} ya está.')
             return False
         else:
             # El ID no está en la base de datos, realiza otra acción específica
@@ -293,10 +293,13 @@ def crear_dict_sorteo(data_list, other_list):
     def replace_spaces(name):
         name = name.replace(' ', '_')
 
+    name_of_category = ''
     for i, rest_of_data in enumerate(data_list[8:len(data_list)]):
-        if i % 2 == 0 and rest_of_data:
+        if rest_of_data.isalpha():
+            name_of_category = rest_of_data
+        else:
             for i2, num in enumerate(prepare_6_nums(data_list[i+1])):
-                sorteo[f'n{i2+1}_{replace_spaces(rest_of_data)}'] = num
+                sorteo[f'n{i2+1}_{replace_spaces(name_of_category)}'] = num
                 print(num)
 
 
