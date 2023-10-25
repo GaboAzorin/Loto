@@ -11,9 +11,9 @@ def add_sorteos_varios(turns: int, DB_NAME):
     prepare_screen()
     all_text, list_of_sorteos = get_screen_info()
     if len(list_of_sorteos) == 10:
-        py.moveTo(990, 365)
+        py.moveTo(1150, 365)
     else:
-        py.moveTo(990, 418)
+        py.moveTo(1150, 418)
 
     for i2 in range(turns):
         c = time.time()
@@ -30,9 +30,9 @@ def add_sorteos_varios(turns: int, DB_NAME):
         prepare_screen()
         all_text, list_of_sorteos = get_screen_info()
         if len(list_of_sorteos) == 10:
-            py.moveTo(990, 365)
+            py.moveTo(1150, 365)
         else:
-            py.moveTo(990, 418)
+            py.moveTo(1150, 418)
         d = time.time()
         print(f'Tiempo de esta página: {time_elapsed(c, d)}.')
 
@@ -198,7 +198,7 @@ def check_if_id_is_in_db(id_a_verificar, DB_NAME):
 
         if resultado:
             # El ID está en la base de datos, realiza la acción correspondiente
-            print(f'El sorteo {id_a_verificar} ya está.')
+            print(f'El sorteo {id_a_verificar} sí está.')
             return False
         else:
             # El ID no está en la base de datos, realiza otra acción específica
@@ -226,46 +226,24 @@ def crear_db(DB_NAME):
         n5_loto INTEGER,
         n6_loto INTEGER,
         comodin INTEGER,
-        mpw_loto INTEGER,
-        aow_loto INTEGER,
-	    mpw_super_quina INTEGER,
-	    aow_super_quina INTEGER,
-	    mpw_quina INTEGER,
-	    aow_quina INTEGER,
-	    mpw_super_cuaterna INTEGER,
-	    aow_super_cuaterna INTEGER,
-	    mpw_cuaterna INTEGER,
-	    aow_cuaterna INTEGER,
-	    mpw_super_terna INTEGER,
-	    aow_super_terna INTEGER,
-	    mpw_terna INTEGER,
-	    aow_terna INTEGER,
-	    mpw_super_dupla INTEGER,
-	    aow_super_dupla INTEGER,
 	    n1_RECARGADO INTEGER,
         n2_RECARGADO INTEGER,
         n3_RECARGADO INTEGER,
         n4_RECARGADO INTEGER,
         n5_RECARGADO INTEGER,
         n6_RECARGADO INTEGER,
-    	mpw_RECARGADO INTEGER,
-	    aow_RECARGADO INTEGER,
         n1_REVANCHA INTEGER,
         n2_REVANCHA INTEGER,
         n3_REVANCHA INTEGER,
         n4_REVANCHA INTEGER,
         n5_REVANCHA INTEGER,
         n6_REVANCHA INTEGER,
-    	mpw_REVANCHA INTEGER,
-	    aow_REVANCHA INTEGER,
         n1_DESQUITE INTEGER,
         n2_DESQUITE INTEGER,
         n3_DESQUITE INTEGER,
         n4_DESQUITE INTEGER,
         n5_DESQUITE INTEGER,
-        n6_DESQUITE INTEGER,
-    	mpw_DESQUITE INTEGER,
-	    aow_DESQUITE INTEGER
+        n6_DESQUITE INTEGER
     )
     ''')
     
@@ -273,36 +251,62 @@ def crear_db(DB_NAME):
     conn.close()
 
 def crear_dict_sorteo(data_list, other_list):
-    diccionario = {}
-    clave_base = None
-    sufijo = 1
+    # Iniciar el diccionario vacío
+    sorteo = {}
+    """try:
+        other_list = other_list[:other_list.index('JUBILAZO')-1]
+    except:
+        other_list = other_list[:other_list.index('JUBILAZO 1000000')]"""
 
-    for elemento in data_list:
-        # Si el elemento es alfabético
-        if elemento.isalpha():
-            clave_base = elemento
+    # Extracción de la información
+    sorteo['sorteo_id'] = data_list[0]
+    sorteo['day'] = data_list[1]
+    sorteo['month'] = data_list[2]
+    sorteo['year'] = data_list[3]
+    sorteo['week_day'] = data_list[4]
+    def prepare_6_nums(pre_list):
+        final_list = pre_list.split(' ')
+        return final_list
+    for i, num in enumerate(prepare_6_nums(data_list[5])):
+        sorteo[f'n{i+1}_loto'] = num
+
+    sorteo['comodin'] = data_list[7]
+
+    for i, rest_of_data in enumerate(data_list[8:]):
+
+        if rest_of_data.isalpha() or rest_of_data == 'JUBILAZO 50 AÑOS':
+            if rest_of_data == 'JUBILAZO 50 AÑOS':
+                clave_base == 'JUBILAZO_50_AÑOS'
+            else:
+                clave_base = rest_of_data
+            sufijo = 1
+        elif rest_of_data.isalpha() or rest_of_data == 'AHORA SI QUE SI':
+            if rest_of_data == 'AHORA SI QUE SI':
+                clave_base == 'AHORA_SI_QUE_SI'
+            else:
+                clave_base = rest_of_data
             sufijo = 1
         # Si el elemento es numérico
         else:
-            numeros = elemento.split(' ')
+            numeros = rest_of_data.split(' ')
             for idx, num in enumerate(numeros, 1):
                 if sufijo == 1:
-                    diccionario[f"n{idx}_{clave_base}"] = int(num)
+                        sorteo[f"n{idx}_{clave_base}"] = int(num)
                 else:
-                    diccionario[f"n{idx}_{clave_base}_{sufijo}"] = int(num)
+                        sorteo[f"n{idx}_{clave_base}_{sufijo}"] = int(num)
             sufijo += 1
-        if elemento == "MULTIPLICAR":
+        if sorteo == "MULTIPLICAR":
             break
-    #2da parte
-    clave_base = None
-
+    print(other_list)
     for i in range(0, len(other_list), 3):
         if isinstance(other_list[i], str):
             clave_base = other_list[i].replace(" ", "_")
-            diccionario[f"mpw_{clave_base}"] = lista[i+1]
-            diccionario[f"aow_{clave_base}"] = lista[i+2]
+            clave_base = clave_base.replace('+', 'y')
+            print(i, clave_base)
+            sorteo[f"mpw_{clave_base}"] = other_list[i+1]
+            sorteo[f"aow_{clave_base}"] = other_list[i+2]
 
-    return diccionario
+    return sorteo
 
 def extract_date_sublist(element):
     meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
@@ -312,10 +316,10 @@ def extract_date_sublist(element):
 
 def get_info_from_sorteo():
     py.click()
-    time.sleep(1)
+    time.sleep(1.5)
     py.hotkey('ctrl', 'a')
     py.hotkey('ctrl', 'c')
-    time.sleep(0.5)
+    time.sleep(1)
     py.click()
     all_text = str(pc.paste())
     sorteo_content_list = all_text[all_text.find('Resultados del sorteo')+len('Resultados del sorteo'):all_text.find('Siguiente página')]
@@ -325,8 +329,12 @@ def get_info_from_sorteo():
     sorteo_content_list = sorteo_content_list.replace('.', '')
     sorteo_content_list = sorteo_content_list.replace('Sorteo # ', '')
     sorteo_content_list = sorteo_content_list.split('\n')
-    index_primer_loto = sorteo_content_list.index('LOTO')
-    del sorteo_content_list[index_primer_loto:]
+    sorteo_content_list.pop(-1)
+    try:
+        index_primer_loto = sorteo_content_list.index('LOTO')
+        del sorteo_content_list[index_primer_loto:]
+    except:
+        pass
     for i, element in enumerate(sorteo_content_list):
         if 'Números ganadoresComodin' in element:
             sorteo_content_list[i] = 'Comodin'
@@ -342,11 +350,12 @@ def get_info_from_sorteo():
     # Ahora se separa todo en dos listas
     results = sorteo_content_list[:sorteo_content_list.index('DivisiónMontoGanadores')]
     winners_and_amounts = sorteo_content_list[sorteo_content_list.index('DivisiónMontoGanadores')+1:]
+    print(sorteo_content_list)
     dict_final = crear_dict_sorteo(results, winners_and_amounts)
-    exit()
+    return dict_final
 
 def prepare_screen():
-    py.moveTo(990, 540)
+    py.moveTo(1380, 540)
     py.click()
     py.scroll(-500)
 
