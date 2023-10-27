@@ -350,7 +350,6 @@ def get_info_from_sorteo():
     # Ahora se separa todo en dos listas
     results = sorteo_content_list[:sorteo_content_list.index('DivisiónMontoGanadores')]
     winners_and_amounts = sorteo_content_list[sorteo_content_list.index('DivisiónMontoGanadores')+1:]
-    print(sorteo_content_list)
     dict_final = crear_dict_sorteo(results, winners_and_amounts)
     return dict_final
 
