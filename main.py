@@ -11,6 +11,9 @@ DB_NAME = 'loto.db'
 """crear_db(DB_NAME)
 exit()"""
 
+"""agregar_columna(DB_NAME, 'tabla_4_5_millones', 'normal_ordenada_DESQUITE')
+guardar_indices_en_db(DB_NAME, 'DESQUITE')"""
+
 # Fecha del primer sorteo y su número
 primer_sorteo = datetime.datetime(2016, 1, 3, 21, 0)  
 primer_numero_sorteo = 3803
@@ -18,11 +21,26 @@ primer_numero_sorteo = 3803
 # Mostrar mensaje
 #mostrar_mensaje_bienvenida(primer_sorteo, primer_numero_sorteo, DB_NAME)
 
-#add_sorteos_varios(1, DB_NAME)
+"""print(agrupar_y_contar(DB_NAME, 2, 'normal_ordenada_loto'))
+print()
+print(agrupar_y_contar(DB_NAME, 3, 'normal_ordenada_loto'))
+print()
+print(agrupar_y_contar(DB_NAME, 4, 'normal_ordenada_loto'))
+print()
+print(agrupar_y_contar(DB_NAME, 5, 'normal_ordenada_loto'))
+print()
+print(agrupar_y_contar(DB_NAME, 6, 'normal_ordenada_loto'))
+print()
+print(agrupar_y_contar(DB_NAME, 7, 'normal_ordenada_loto'))
+print()
+print(agrupar_y_contar(DB_NAME, 8, 'normal_ordenada_loto'))
+print()
+print(agrupar_y_contar(DB_NAME, 9, 'normal_ordenada_loto'))
+print()"""
+print(agrupar_y_contar(DB_NAME, 20, 'normal_ordenada_loto'))
 
-ult = [7, 13, 16, 23, 29, 32]
-print(f'Último sorteo: 7, 13, 16, 23, 29, 32')
-print(get_combination_index(ult))
+
+#add_sorteos_varios(1, DB_NAME)
 
 print('\nAlgunas estadísticas:')
 #print('¿Se ha repetido algún resultado?')
