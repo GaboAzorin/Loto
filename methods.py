@@ -2,6 +2,7 @@ import sqlite3
 import time
 import pyautogui as py
 import datetime
+import math
 import pyperclip as pc
 import re
 from GAP_Utils.Utils import Play_end_mp3, click_button_on_screen, time_elapsed
@@ -313,6 +314,19 @@ def extract_date_sublist(element):
     fecha_info = re.search(r'(\w+), (\d+) de (\w+) de (\d+)', element)
     mes = meses.index(fecha_info.group(3)) + 1
     return [int(fecha_info.group(2)), mes, int(fecha_info.group(4)), fecha_info.group(1)]
+
+def get_combination_index(nums):
+    nums = sorted(nums)  # Aseguramos que los números están ordenados
+    indice = 0
+    
+    def combinaciones(n, r):
+        return math.comb(n, r)
+
+    for i, num in enumerate(nums):
+        for prev_num in range(nums[i - 1] + 1 if i != 0 else 1, num):
+            indice += combinaciones(41 - prev_num, 6 - i - 1)
+            
+    return indice + 1  # +1 para que comience desde 1 en vez de 0
 
 def get_info_from_sorteo():
     py.click()

@@ -20,18 +20,35 @@ primer_numero_sorteo = 3803
 
 #add_sorteos_varios(1, DB_NAME)
 
-print('\nAlgunas estadísticas:')
-print('¿Se ha repetido algún resultado?')
-print(f'    - {resultados_repetidos(DB_NAME)}')
-print(f'Números más comunes en el día que sigue ({calcular_dia_siguiente()}):')
-numeros_más_comunes, booleano = numeros_comunes_y_repetidos_por_dia(DB_NAME, calcular_dia_siguiente())
-if booleano:
-    print(f'    {numeros_más_comunes}. Este conjunto como tal SÍ se ha dado en un resultado.')
-else:
-    print(f'    {numeros_más_comunes}. Este conjunto como tal nunca se ha dado en un resultado.')
+ult = [7, 13, 16, 23, 29, 32]
+print(f'Último sorteo: 7, 13, 16, 23, 29, 32')
+print(get_combination_index(ult))
 
-print(f'Números más comunes en el día numérico que sigue ({calcular_dia_siguiente_numerico()}):')
-print(f'    {numeros_comunes_por_dia_numerico(DB_NAME, calcular_dia_siguiente_numerico())}')
+print('\nAlgunas estadísticas:')
+#print('¿Se ha repetido algún resultado?')
+#print(f'    - {resultados_repetidos(DB_NAME)}')
+print(f'Números más comunes en el día que sigue ({calcular_dia_siguiente()}):')
+n_tuple, all_tuple = numeros_comunes_por_criterios(DB_NAME, week_day=calcular_dia_siguiente())
+print(f'    En cada "n": {n_tuple[0]} | ¿Se ha repetido?: {n_tuple[1]}')
+print(f'        ¿Cuántas veces cada uno?: {n_tuple[2]}')
+print(f'    En todas las letras o posiciones: {all_tuple[0]} | ¿Se ha repetido?: {all_tuple[1]}')
+print(f'        ¿Cuántas veces cada uno?: {all_tuple[2]}')
+print()
+
+print(f'Números más comunes en el día que sigue ({calcular_dia_siguiente_numerico()}):')
+n_tuple, all_tuple = numeros_comunes_por_criterios(DB_NAME, day=calcular_dia_siguiente_numerico())
+print(f'    En cada "n": {n_tuple[0]} | ¿Se ha repetido?: {n_tuple[1]}')
+print(f'        ¿Cuántas veces cada uno?: {n_tuple[2]}')
+print(f'    En todas las letras o posiciones: {all_tuple[0]} | ¿Se ha repetido?: {all_tuple[1]}')
+print(f'        ¿Cuántas veces cada uno?: {all_tuple[2]}')
+print()
+
+print(f'Números más comunes en el día que sigue ({calcular_dia_siguiente()} {calcular_dia_siguiente_numerico()}):')
+n_tuple, all_tuple = numeros_comunes_por_criterios(DB_NAME, day=calcular_dia_siguiente_numerico(), week_day=calcular_dia_siguiente())
+print(f'    En cada "n": {n_tuple[0]} | ¿Se ha repetido?: {n_tuple[1]}')
+print(f'        ¿Cuántas veces cada uno?: {n_tuple[2]}')
+print(f'    En todas las letras o posiciones: {all_tuple[0]} | ¿Se ha repetido?: {all_tuple[1]}')
+print(f'        ¿Cuántas veces cada uno?: {all_tuple[2]}')
 
 time.sleep(1)
 
