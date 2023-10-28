@@ -1,5 +1,7 @@
-import sqlite3
+from collections import Counter
 from methods import get_combination_index
+import sqlite3
+
 
 def agregar_columna(db_path, tabla, nombre_columna, tipo_dato="INTEGER"):
     # Conectarse a la base de datos
@@ -58,7 +60,6 @@ def agrupar_y_contar(db_path, num_divisiones, columna):
 
     return resultados_ordenados
 
-
 def crear_table(db_path):
 
     # Conectarse a la base de datos
@@ -71,10 +72,15 @@ def crear_table(db_path):
 
     # Crear la tabla jugadas
     cursor.execute('''
-    CREATE TABLE tabla_4_5_millones (
+    CREATE TABLE posibilidades (
         id INTEGER PRIMARY KEY,
         sorteo_id INTEGER,
-        normal_ordenada_loto INTEGER,
+        n1_loto INTEGER,
+        n2_loto INTEGER,
+        n3_loto INTEGER,
+        n4_loto INTEGER,
+        n5_loto INTEGER,
+        n6_loto INTEGER,
         FOREIGN KEY(sorteo_id) REFERENCES sorteos(sorteo_id)
     )
     ''')
@@ -105,7 +111,6 @@ def guardar_indices_en_db(db_path, sufijo):
     conexion.commit()
     cursor.close()
     conexion.close()
-
 
 def numeros_comunes_por_criterios(db_path, **kwargs):
     """
@@ -206,4 +211,52 @@ def numeros_comunes_por_criterios(db_path, **kwargs):
 
     return (numeros_comunes_por_posicion, combinacion_por_posicion_existe, repeticiones_por_posicion), (numeros_comunes_general, combinacion_general_existe, repeticiones_general)
 
+def numeros_frecuentes_por_sorteo(db_path, tipo_sorteo):
+    # Conectarse a la base de datos
+    conexion = sqlite3.connect(db_path)
+    cursor = conexion.cursor()
 
+    # Crear una lista de nombres de columnas basándose en el tipo de sorteo
+    columnas = [f'n{i}_{tipo_sorteo}' for i in range(1, 7)]
+
+    # Crear un contador para cada columna
+    contadores = [Counter() for _ in columnas]
+
+    # Consultar la tabla 'sorteos' usando los nombres de columnas construidos
+    query = f"SELECT sorteo_id, {', '.join(columnas)} FROM sorteos"
+    cursor.execute(query)
+    sorteos = cursor.fetchall()
+
+    # Utilizar transacciones para mejorar la eficiencia
+    conexion.execute('BEGIN TRANSACTION')
+
+    for sorteo in sorteos:
+        sorteo_id = sorteo[0]
+        numeros_sorteo = sorteo[1:]
+
+        mas_frecuentes = []
+        for i, num in enumerate(numeros_sorteo):
+            # Actualizar el contador con el número del sorteo actual
+            contadores[i].update([num])
+            # Obtener el número más común para este contador/columna
+            mas_frecuente = contadores[i].most_common(1)[0][0]
+            mas_frecuentes.append(mas_frecuente)
+
+        # Calcular las diferencias entre los números del sorteo y los más frecuentes
+        diferencias = [numeros_sorteo[i] - mas_frecuentes[i] for i in range(6)]
+
+        # Insertar las diferencias en la tabla 'posibilidades'
+        cursor.execute(f"INSERT INTO posibilidades (sorteo_id, n1_{tipo_sorteo}, n2_{tipo_sorteo}, n3_{tipo_sorteo}, n4_{tipo_sorteo}, n5_{tipo_sorteo}, n6_{tipo_sorteo}) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                       (sorteo_id, *diferencias))
+
+        # Actualizar la tabla 'sorteos' con los números más comunes
+        cols_actualizar = ", ".join([f'n{i}_{tipo_sorteo}_mas_comun = ?' for i in range(1, 7)])
+        query_update = f"UPDATE sorteos SET {cols_actualizar} WHERE sorteo_id = ?"
+        cursor.execute(query_update, (*mas_frecuentes, sorteo_id))
+
+    # Confirmar cambios y cerrar conexión
+    conexion.commit()
+    cursor.close()
+    conexion.close()
+
+    print("Datos guardados correctamente en la base de datos.")

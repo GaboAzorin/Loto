@@ -8,11 +8,11 @@ import time
 
 # Configuración de la base de datos
 DB_NAME = 'loto.db'
-"""crear_db(DB_NAME)
-exit()"""
+#crear_table(DB_NAME)
 
-"""agregar_columna(DB_NAME, 'tabla_4_5_millones', 'normal_ordenada_DESQUITE')
-guardar_indices_en_db(DB_NAME, 'DESQUITE')"""
+#agregar_columna(DB_NAME, 'sorteos', 'n6_loto_mas_comun')
+#guardar_indices_en_db(DB_NAME, 'DESQUITE')
+
 
 # Fecha del primer sorteo y su número
 primer_sorteo = datetime.datetime(2016, 1, 3, 21, 0)  
@@ -20,6 +20,9 @@ primer_numero_sorteo = 3803
 
 # Mostrar mensaje
 #mostrar_mensaje_bienvenida(primer_sorteo, primer_numero_sorteo, DB_NAME)
+
+numeros_frecuentes_por_sorteo(DB_NAME, 'loto')
+exit()
 
 """print(agrupar_y_contar(DB_NAME, 2, 'normal_ordenada_loto'))
 print()
@@ -63,6 +66,15 @@ print()
 
 print(f'Números más comunes en el día que sigue ({calcular_dia_siguiente()} {calcular_dia_siguiente_numerico()}):')
 n_tuple, all_tuple = numeros_comunes_por_criterios(DB_NAME, day=calcular_dia_siguiente_numerico(), week_day=calcular_dia_siguiente())
+print(f'    En cada "n": {n_tuple[0]} | ¿Se ha repetido?: {n_tuple[1]}')
+print(f'        ¿Cuántas veces cada uno?: {n_tuple[2]}')
+print(f'    En todas las letras o posiciones: {all_tuple[0]} | ¿Se ha repetido?: {all_tuple[1]}')
+print(f'        ¿Cuántas veces cada uno?: {all_tuple[2]}')
+print()
+
+actual_year = datetime.datetime.now().year
+print(f'Números más comunes en este año ({actual_year}):')
+n_tuple, all_tuple = numeros_comunes_por_criterios(DB_NAME, year=actual_year)
 print(f'    En cada "n": {n_tuple[0]} | ¿Se ha repetido?: {n_tuple[1]}')
 print(f'        ¿Cuántas veces cada uno?: {n_tuple[2]}')
 print(f'    En todas las letras o posiciones: {all_tuple[0]} | ¿Se ha repetido?: {all_tuple[1]}')

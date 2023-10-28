@@ -105,12 +105,24 @@ def calcular_dia_siguiente():
     if dia_actual_espanol in dias_sorteo and hora_actual < hora_sorteo:
         return dia_actual_espanol
 
-    # Si no, buscamos el siguiente día de sorteo
-    idx_actual = dias_sorteo.index(dia_actual_espanol) if dia_actual_espanol in dias_sorteo else -1
-    for i in range(1, len(dias_sorteo) + 1):
-        siguiente_idx = (idx_actual + i) % len(dias_sorteo)
-        if dias_sorteo[siguiente_idx] != dia_actual_espanol:
-            return dias_sorteo[siguiente_idx]
+    # Si hoy es martes después de la hora del sorteo
+    if dia_actual_espanol == "martes" and hora_actual >= hora_sorteo:
+        return "jueves"
+
+    # Si hoy es jueves después de la hora del sorteo
+    if dia_actual_espanol == "jueves" and hora_actual >= hora_sorteo:
+        return "domingo"
+
+    # Si hoy es domingo después de la hora del sorteo
+    if dia_actual_espanol == "domingo" and hora_actual >= hora_sorteo:
+        return "martes"
+
+    # Si hoy es cualquier otro día y aún no es domingo
+    if dia_actual_espanol in ["lunes", "miércoles", "jueves", "viernes", "sábado"]:
+        return "domingo"
+
+    # En cualquier otro caso, el siguiente sorteo será el martes
+    return "martes"
 
 def calcular_dia_siguiente_numerico():
     # Definir días de sorteo
