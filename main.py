@@ -21,9 +21,6 @@ primer_numero_sorteo = 3803
 # Mostrar mensaje
 #mostrar_mensaje_bienvenida(primer_sorteo, primer_numero_sorteo, DB_NAME)
 
-numeros_frecuentes_por_sorteo(DB_NAME, 'loto')
-exit()
-
 """print(agrupar_y_contar(DB_NAME, 2, 'normal_ordenada_loto'))
 print()
 print(agrupar_y_contar(DB_NAME, 3, 'normal_ordenada_loto'))
