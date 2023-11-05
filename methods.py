@@ -79,8 +79,11 @@ def agregar_sorteo(sorteo_dict, DB_NAME):
     conn.close()
 
 def calcular_dia_siguiente():
+    """
+    Calcula el siguiente día de la semana
+    en el que será un sorteo.
+    """
     # Definir días de sorteo y hora de sorteo
-    dias_sorteo = ['martes', 'jueves', 'domingo']
     hora_sorteo = datetime.time(21, 0)
 
     # Obtener el día y hora actual
@@ -101,28 +104,29 @@ def calcular_dia_siguiente():
 
     dia_actual_espanol = traductor_dias[dia_actual]
 
-    # Si hoy es día de sorteo y aún no ha llegado la hora del sorteo
-    if dia_actual_espanol in dias_sorteo and hora_actual < hora_sorteo:
-        return dia_actual_espanol
-
-    # Si hoy es martes después de la hora del sorteo
-    if dia_actual_espanol == "martes" and hora_actual >= hora_sorteo:
-        return "jueves"
-
-    # Si hoy es jueves después de la hora del sorteo
-    if dia_actual_espanol == "jueves" and hora_actual >= hora_sorteo:
-        return "domingo"
-
-    # Si hoy es domingo después de la hora del sorteo
-    if dia_actual_espanol == "domingo" and hora_actual >= hora_sorteo:
+    if dia_actual_espanol == "lunes":
         return "martes"
-
-    # Si hoy es cualquier otro día y aún no es domingo
-    if dia_actual_espanol in ["lunes", "miércoles", "jueves", "viernes", "sábado"]:
+    elif dia_actual_espanol == "martes":
+        if hora_actual < hora_sorteo:
+            return "martes"
+        else:
+            return "jueves"
+    elif dia_actual_espanol == "miércoles":
+        return "jueves"
+    elif dia_actual_espanol == "jueves":
+        if hora_actual < hora_sorteo:
+            return "jueves"
+        else:
+            return "domingo"
+    elif dia_actual_espanol == "viernes":
         return "domingo"
-
-    # En cualquier otro caso, el siguiente sorteo será el martes
-    return "martes"
+    elif dia_actual_espanol == "sábado":
+        return "domingo"
+    elif dia_actual_espanol == "domingo":
+        if hora_actual < hora_sorteo:
+            return "domingo"
+        else:
+            return "martes"
 
 def calcular_dia_siguiente_numerico():
     # Definir días de sorteo

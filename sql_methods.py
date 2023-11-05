@@ -60,6 +60,45 @@ def agrupar_y_contar(db_path, num_divisiones, columna):
 
     return resultados_ordenados
 
+def cambiar_nombre_columna(db_path, table_name, old_column_name, new_column_name):
+    # Conectarse a la base de datos
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Obtener la lista de columnas de la tabla
+    cursor.execute(f"PRAGMA table_info({table_name})")
+    columns_info = cursor.fetchall()
+
+    # Crear una lista para la definición de la nueva tabla con la columna renombrada
+    columns_definition = []
+    for col in columns_info:
+        col_def = f"{new_column_name} {col[2]}" if col[1] == old_column_name else f"{col[1]} {col[2]}"
+        columns_definition.append(col_def)
+    columns_definition_str = ", ".join(columns_definition)
+
+    # Crear una lista para la selección de la tabla antigua con el nombre correcto de las columnas
+    columns_selection = [new_column_name if col[1] == old_column_name else col[1] for col in columns_info]
+    columns_selection_str = ", ".join(columns_selection)
+
+    # Crear una nueva tabla con la columna renombrada
+    cursor.execute(f"ALTER TABLE {table_name} RENAME TO {table_name}_old;")
+    cursor.execute(f"CREATE TABLE {table_name} ({columns_definition_str});")
+
+    # Copiar los datos de la tabla antigua a la nueva tabla
+    cursor.execute(f"INSERT INTO {table_name} ({columns_selection_str}) SELECT {columns_selection_str} FROM {table_name}_old;")
+
+    # Eliminar la tabla antigua
+    cursor.execute(f"DROP TABLE {table_name}_old;")
+
+    # Confirmar los cambios
+    conn.commit()
+
+    # Cerrar la conexión
+    cursor.close()
+    conn.close()
+
+    print(f"La columna '{old_column_name}' ha sido renombrada a '{new_column_name}' en la tabla '{table_name}' con éxito.")
+
 def crear_table(db_path):
 
     # Conectarse a la base de datos
@@ -88,12 +127,55 @@ def crear_table(db_path):
     conn.commit()
     conn.close()
 
+def eliminar_columna_en_sqlite(db_path, table_name, column_name):
+    # Conectarse a la base de datos
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Obtener la lista de columnas de la tabla
+    cursor.execute(f"PRAGMA table_info({table_name})")
+    columns = cursor.fetchall()
+    
+    # Filtrar el nombre de la columna que queremos eliminar
+    columns_to_copy = [col[1] for col in columns if col[1] != column_name]
+
+    # Si la columna a eliminar no está en la tabla, terminar la función
+    if column_name not in [col[1] for col in columns]:
+        print(f"La columna '{column_name}' no existe en la tabla '{table_name}'.")
+        cursor.close()
+        conn.close()
+        return
+
+    # Crear una nueva lista de columnas para la consulta, excluyendo la columna a eliminar
+    columns_str = ", ".join(columns_to_copy)
+
+    # Comenzar la transacción
+    cursor.execute("BEGIN TRANSACTION;")
+
+    # Crear una nueva tabla que es una copia de la vieja sin la columna no deseada
+    new_table_name = f"{table_name}_new"
+    cursor.execute(f"CREATE TABLE {new_table_name} AS SELECT {columns_str} FROM {table_name};")
+
+    # Eliminar la tabla antigua
+    cursor.execute(f"DROP TABLE {table_name};")
+
+    # Renombrar la nueva tabla con el nombre de la tabla original
+    cursor.execute(f"ALTER TABLE {new_table_name} RENAME TO {table_name};")
+
+    # Hacer commit de la transacción
+    conn.commit()
+
+    # Cerrar la conexión
+    cursor.close()
+    conn.close()
+
+    print(f"La columna '{column_name}' ha sido eliminada de la tabla '{table_name}' con éxito.")
+
 def guardar_indices_en_db(db_path, sufijo):
     conexion = sqlite3.connect(db_path)
     cursor = conexion.cursor()
 
     columnas = [f'n{i}_{sufijo}' for i in range(1, 7)]
-    
     cursor.execute(f"SELECT sorteo_id, {', '.join(columnas)} FROM sorteos")
     sorteos = cursor.fetchall()
 
@@ -101,12 +183,19 @@ def guardar_indices_en_db(db_path, sufijo):
         sorteo_id = sorteo[0]  # Obtener el ID del sorteo
         numeros = sorteo[1:]   # Obtener los números del sorteo
 
-        if None in numeros:  # Si hay algún valor nulo en el conjunto
-            valor_insertar = None
+        # Comprueba si ya existe un valor para normal_ordenada_{sufijo} en la tabla para ese sorteo_id
+        cursor.execute(f"SELECT normal_ordenada_{sufijo} FROM tabla_4_5_millones WHERE sorteo_id = ?", (sorteo_id,))
+        resultado = cursor.fetchone()
+
+        if resultado is None or resultado[0] is None:  # Si no hay un valor existente
+            if None in numeros:  # Si hay algún valor nulo en el conjunto
+                valor_insertar = None
+            else:
+                valor_insertar = get_combination_index(numeros)
+            
+            cursor.execute(f"UPDATE tabla_4_5_millones SET normal_ordenada_{sufijo} = ? WHERE sorteo_id = ?", (valor_insertar, sorteo_id))
         else:
-            valor_insertar = get_combination_index(numeros)
-        
-        cursor.execute(f"UPDATE tabla_4_5_millones SET normal_ordenada_{sufijo} = ? WHERE sorteo_id = ?", (valor_insertar, sorteo_id))
+            print(f"El sorteo_id {sorteo_id} ya tiene un valor para normal_ordenada_{sufijo}, no se actualiza.")
 
     conexion.commit()
     cursor.close()
@@ -218,45 +307,49 @@ def numeros_frecuentes_por_sorteo(db_path, tipo_sorteo):
 
     # Crear una lista de nombres de columnas basándose en el tipo de sorteo
     columnas = [f'n{i}_{tipo_sorteo}' for i in range(1, 7)]
-
-    # Crear un contador para cada columna
     contadores = [Counter() for _ in columnas]
 
-    # Consultar la tabla 'sorteos' usando los nombres de columnas construidos
+    # Consultar la tabla 'sorteos'
     query = f"SELECT sorteo_id, {', '.join(columnas)} FROM sorteos"
     cursor.execute(query)
     sorteos = cursor.fetchall()
 
-    # Utilizar transacciones para mejorar la eficiencia
+    # Iniciar la transacción
     conexion.execute('BEGIN TRANSACTION')
 
-    for sorteo in sorteos:
+    # Definir la cadena de actualización de columnas para los números más comunes
+    cols_actualizar_mas_comun = ", ".join(
+        [f'n{i}_{tipo_sorteo}_mas_comun = ?' for i in range(1, 7)]
+    )
+
+    for index, sorteo in enumerate(sorteos):
         sorteo_id = sorteo[0]
         numeros_sorteo = sorteo[1:]
 
         mas_frecuentes = []
         for i, num in enumerate(numeros_sorteo):
-            # Actualizar el contador con el número del sorteo actual
             contadores[i].update([num])
-            # Obtener el número más común para este contador/columna
             mas_frecuente = contadores[i].most_common(1)[0][0]
             mas_frecuentes.append(mas_frecuente)
 
-        # Calcular las diferencias entre los números del sorteo y los más frecuentes
-        diferencias = [numeros_sorteo[i] - mas_frecuentes[i] for i in range(6)]
+        if index == 0:
+            diferencias = [0] * 6
+        else:
+            diferencias = [numeros_sorteo[i] - mas_frecuentes[i] for i in range(6)]
 
-        # Insertar las diferencias en la tabla 'posibilidades'
-        cursor.execute(f"INSERT INTO posibilidades (sorteo_id, n1_{tipo_sorteo}, n2_{tipo_sorteo}, n3_{tipo_sorteo}, n4_{tipo_sorteo}, n5_{tipo_sorteo}, n6_{tipo_sorteo}) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                       (sorteo_id, *diferencias))
+        # Preparar la consulta de actualización con los valores de dispersión y los más comunes
+        cols_actualizar_dispersion = ", ".join(
+            [f'n{i}_{tipo_sorteo}_mas_comun_dispersion = ?' for i in range(1, 7)]
+        )
+        query_update = f"UPDATE sorteos SET {cols_actualizar_dispersion}, {cols_actualizar_mas_comun} WHERE sorteo_id = ?"
 
-        # Actualizar la tabla 'sorteos' con los números más comunes
-        cols_actualizar = ", ".join([f'n{i}_{tipo_sorteo}_mas_comun = ?' for i in range(1, 7)])
-        query_update = f"UPDATE sorteos SET {cols_actualizar} WHERE sorteo_id = ?"
-        cursor.execute(query_update, (*mas_frecuentes, sorteo_id))
+        # Ejecutar la consulta de actualización
+        cursor.execute(query_update, (*diferencias, *mas_frecuentes, sorteo_id))
 
-    # Confirmar cambios y cerrar conexión
+    # Confirmar la transacción y cerrar la conexión
     conexion.commit()
     cursor.close()
     conexion.close()
 
     print("Datos guardados correctamente en la base de datos.")
+
