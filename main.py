@@ -8,13 +8,13 @@ import time
 
 # Configuración de la base de datos
 DB_NAME = 'loto.db'
-#agregar_columna(DB_NAME, 'sorteos', 'n6_loto_mas_comun_dispersion')
 #numeros_frecuentes_por_sorteo(DB_NAME, 'loto')
 #exit()
 #crear_table(DB_NAME)
 
 #agregar_columna(DB_NAME, 'sorteos', 'n6_loto_mas_comun')
-#guardar_indices_en_db(DB_NAME, 'DESQUITE')
+guardar_indices_en_db(DB_NAME, 'loto')
+#exit()
 
 
 # Fecha del primer sorteo y su número
@@ -40,7 +40,7 @@ print(agrupar_y_contar(DB_NAME, 8, 'normal_ordenada_loto'))
 print()
 print(agrupar_y_contar(DB_NAME, 9, 'normal_ordenada_loto'))
 print()"""
-print(agrupar_y_contar(DB_NAME, 20, 'normal_ordenada_loto'))
+print(agrupar_y_contar(DB_NAME, 100, 'normal_ordenada_loto'))
 
 
 #add_sorteos_varios(1, DB_NAME)

@@ -314,7 +314,6 @@ def crear_dict_sorteo(data_list, other_list):
             sufijo += 1
         if sorteo == "MULTIPLICAR":
             break
-    print(other_list)
     for i in range(0, len(other_list), 3):
         if isinstance(other_list[i], str):
             clave_base = other_list[i].replace(" ", "_")
@@ -322,6 +321,8 @@ def crear_dict_sorteo(data_list, other_list):
             print(i, clave_base)
             sorteo[f"mpw_{clave_base}"] = other_list[i+1]
             sorteo[f"aow_{clave_base}"] = other_list[i+2]
+
+    # Creación de los más comunes
 
     return sorteo
 
