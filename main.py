@@ -8,13 +8,13 @@ import time
 
 # Configuración de la base de datos
 DB_NAME = 'loto.db'
-#numeros_frecuentes_por_sorteo(DB_NAME, 'loto')
+numeros_frecuentes_por_sorteo(DB_NAME, 'loto')
 #exit()
 #crear_table(DB_NAME)
 
 #agregar_columna(DB_NAME, 'sorteos', 'n6_loto_mas_comun')
-guardar_indices_en_db(DB_NAME, 'loto')
-#exit()
+#guardar_indices_en_db(DB_NAME, 'DESQUITE')
+exit()
 
 
 # Fecha del primer sorteo y su número
