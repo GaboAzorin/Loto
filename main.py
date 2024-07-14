@@ -14,7 +14,7 @@ numeros_frecuentes_por_sorteo(DB_NAME, 'loto')
 
 #agregar_columna(DB_NAME, 'sorteos', 'n6_loto_mas_comun')
 #guardar_indices_en_db(DB_NAME, 'DESQUITE')
-exit()
+
 
 
 # Fecha del primer sorteo y su número
@@ -43,7 +43,7 @@ print()"""
 print(agrupar_y_contar(DB_NAME, 100, 'normal_ordenada_loto'))
 
 
-#add_sorteos_varios(1, DB_NAME)
+add_sorteos_varios(10, DB_NAME)
 
 print('\nAlgunas estadísticas:')
 #print('¿Se ha repetido algún resultado?')
