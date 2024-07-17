@@ -43,7 +43,6 @@ def add_sorteos_varios(turns: int, DB_NAME):
     print(f'Tiempo total de programa: {time_elapsed(a, b)}.')
     Play_end_mp3()
 
-
 def agregar_sorteo(sorteo_dict, DB_NAME):
     """
     Inserta datos desde un diccionario en una tabla SQL, creando columnas adicionales si es necesario.
@@ -97,7 +96,6 @@ def agregar_sorteo(sorteo_dict, DB_NAME):
     # Guardar cambios y cerrar conexión
     conn.commit()
     conn.close()
-
 
 def calcular_dia_siguiente():
     """
@@ -202,7 +200,7 @@ def calcular_sorteos_faltantes(primer_sorteo, primer_numero_sorteo, DB_NAME):
     sorteos_faltantes = total_sorteos - (ultimo_sorteo - primer_numero_sorteo + 1)
 
     conn.close()
-    return total_sorteos + primer_numero_sorteo, sorteos_faltantes
+    return total_sorteos + primer_numero_sorteo + 1, sorteos_faltantes
 
 def mostrar_mensaje_bienvenida(primer_sorteo, primer_numero_sorteo, DB_NAME):
     fecha_actual = datetime.datetime.now()
@@ -213,10 +211,11 @@ def mostrar_mensaje_bienvenida(primer_sorteo, primer_numero_sorteo, DB_NAME):
         mensaje += f"Hoy a las 21:00 se lanzará el sorteo número {proximo_sorteo}. "
     else:
         mensaje += f"El próximo sorteo será el número {proximo_sorteo}. "
-    mensaje += f"A tu base de datos le faltan {faltantes} sorteos."
+    mensaje += f"A tu base de datos le faltan {faltantes+1} sorteos."
     print('------ ----- ---- --- -- -    - -- --- ---- ----- ------\n')
-    
+
     print(mensaje)
+    print()
 
 def check_if_id_is_in_db(id_a_verificar, DB_NAME):
     try:
@@ -339,7 +338,6 @@ def crear_dict_sorteo(data_list, other_list):
         if isinstance(other_list[i], str):
             clave_base = other_list[i].replace(" ", "_")
             clave_base = clave_base.replace('+', 'y')
-            print(i, clave_base)
             sorteo[f"mpw_{clave_base}"] = other_list[i+1]
             sorteo[f"aow_{clave_base}"] = other_list[i+2]
 
@@ -424,7 +422,6 @@ def ordenar_tabla_por_sorteo_id(DB_NAME):
 
     conn.commit()
     conn.close()
-
 
 def prepare_screen():
     py.moveTo(1380, 540)

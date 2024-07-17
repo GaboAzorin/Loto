@@ -8,13 +8,14 @@ import time
 
 # Configuración de la base de datos
 DB_NAME = 'loto.db'
-numeros_frecuentes_por_sorteo(DB_NAME, 'loto')
 #crear_table(DB_NAME)
 
 #agregar_columna(DB_NAME, 'sorteos', 'DESQUITE_posicion_en_4_5')
 
+# _ _ _ _ _ _ _Convertir la base de datos en un excel
+convertir_db_a_excel(DB_NAME, 'excel.xlsx')
 
-# _ Guarda los índices del sorteo en la tabla de los 4.5 millones
+# _ _ _ _ _ _ _Guarda los índices del sorteo en la tabla de los 4.5 millones
 #guardar_indices_en_db(DB_NAME, 'loto')
 
 
@@ -25,25 +26,13 @@ primer_numero_sorteo = 3803
 # Mostrar mensaje
 mostrar_mensaje_bienvenida(primer_sorteo, primer_numero_sorteo, DB_NAME)
 
-"""print(agrupar_y_contar(DB_NAME, 2, 'normal_ordenada_loto'))
-print()
-print(agrupar_y_contar(DB_NAME, 3, 'normal_ordenada_loto'))
-print()
-print(agrupar_y_contar(DB_NAME, 4, 'normal_ordenada_loto'))
-print()
-print(agrupar_y_contar(DB_NAME, 5, 'normal_ordenada_loto'))
-print()
-print(agrupar_y_contar(DB_NAME, 6, 'normal_ordenada_loto'))
-print()
-print(agrupar_y_contar(DB_NAME, 7, 'normal_ordenada_loto'))
-print()
-print(agrupar_y_contar(DB_NAME, 8, 'normal_ordenada_loto'))
-print()
-print(agrupar_y_contar(DB_NAME, 9, 'normal_ordenada_loto'))
-print()"""
-print(agrupar_y_contar(DB_NAME, 100, 'normal_ordenada_loto'))
+# _ _ _ _ _ _ _ Imprimir los 100 clusters más comunes en esta fecha
+n_de_clusters = 100
+print(f'A continuación se muestran los {n_de_clusters} clusters, ordenados por los clusters que más resultados han aportado.')
+print("Se verán así:\n('Nº de cluster: resultado menor-resultado mayor del cluster', nº de sorteos que vinieron de este cluster, '% de participación del cluster')\n")
+print(agrupar_y_contar(DB_NAME, n_de_clusters, 'loto_posicion_en_4_5'))
 
-# AGREGAR SORTEOS.
+# _ _ _ _ _ _ _ AGREGAR SORTEOS.
 #add_sorteos_varios(1, DB_NAME)
 #numeros_frecuentes_por_sorteo(DB_NAME, 'loto')
 

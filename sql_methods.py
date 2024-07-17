@@ -2,6 +2,7 @@ from collections import Counter
 from methods import get_combination_index
 import sqlite3
 import pandas as pd
+from openpyxl import load_workbook
 
 
 def agregar_columna(db_path, tabla, nombre_columna, tipo_dato="INTEGER"):
@@ -27,7 +28,7 @@ def agrupar_y_contar(db_path, num_divisiones, columna):
     cursor = conexion.cursor()
 
     # Obtener la cantidad total de registros en la columna dada
-    cursor.execute(f"SELECT COUNT(*) FROM tabla_4_5_millones WHERE {columna} IS NOT NULL")
+    cursor.execute(f"SELECT COUNT(*) FROM sorteos WHERE {columna} IS NOT NULL")
     total_registros = cursor.fetchone()[0]
 
     # Iniciar lista para guardar resultados
@@ -42,7 +43,7 @@ def agrupar_y_contar(db_path, num_divisiones, columna):
             fin = total_valores
         
         # Contar cuántos elementos están en el rango actual
-        cursor.execute(f"SELECT COUNT(*) FROM tabla_4_5_millones WHERE {columna} BETWEEN ? AND ?", (inicio, fin))
+        cursor.execute(f"SELECT COUNT(*) FROM sorteos WHERE {columna} BETWEEN ? AND ?", (inicio, fin))
         count = cursor.fetchone()[0]
         
         porcentaje_del_total_registros = (count / total_registros) * 100
@@ -99,6 +100,28 @@ def cambiar_nombre_columna(db_path, table_name, old_column_name, new_column_name
     conn.close()
 
     print(f"La columna '{old_column_name}' ha sido renombrada a '{new_column_name}' en la tabla '{table_name}' con éxito.")
+
+def convertir_db_a_excel(db_path, excel_path):
+    # Conectar a la base de datos
+    conexion = sqlite3.connect(db_path)
+    
+    # Leer la tabla "sorteos" en un DataFrame de pandas
+    df = pd.read_sql_query("SELECT * FROM sorteos", conexion)
+    
+    # Cerrar la conexión
+    conexion.close()
+    
+    # Guardar el DataFrame en un archivo Excel
+    df.to_excel(excel_path, index=False)
+    
+    # Cargar el archivo Excel y inmovilizar la primera columna
+    workbook = load_workbook(excel_path)
+    worksheet = workbook.active
+    worksheet.freeze_panes = 'B2'  # Inmovilizar la primera columna (A) y la primera fila (1)
+    
+    # Guardar el archivo Excel modificado
+    workbook.save(excel_path)
+    print(f"Base de datos exportada a {excel_path} con la primera columna inmovilizada.")
 
 def crear_table(db_path):
 
