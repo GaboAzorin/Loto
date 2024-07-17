@@ -19,12 +19,11 @@ def add_sorteos_varios(turns: int, DB_NAME):
     for i2 in range(turns):
         c = time.time()
         for i, sorteo in enumerate(list_of_sorteos):
-            if i <= (len(list_of_sorteos)-1):
+            if i <= (len(list_of_sorteos) - 1):
                 time.sleep(2)
                 if check_if_id_is_in_db(sorteo, DB_NAME):
                     agregar_sorteo(get_info_from_sorteo(), DB_NAME)
-                    #print(get_info_from_sorteo())
-                py.moveRel(0,53)
+                py.moveRel(0, 53)
         click_button_on_screen('boton.png')
         time.sleep(2)
         py.scroll(2000)
@@ -37,16 +36,18 @@ def add_sorteos_varios(turns: int, DB_NAME):
         d = time.time()
         print(f'Tiempo de esta página: {time_elapsed(c, d)}.')
 
+    # Ordenar la base de datos después de la última actualización
+    ordenar_tabla_por_sorteo_id(DB_NAME)
+
     b = time.time()
     print(f'Tiempo total de programa: {time_elapsed(a, b)}.')
     Play_end_mp3()
 
+
 def agregar_sorteo(sorteo_dict, DB_NAME):
     """
     Inserta datos desde un diccionario en una tabla SQL, creando columnas adicionales si es necesario.
-
     DB_NAME: Ruta de la base de datos SQLite.
-    table_name: Nombre de la tabla donde insertar los datos.
     data_dict: Diccionario con claves (nombres de columnas) y valores a insertar.
     """
     # Conexión a la base de datos
@@ -54,14 +55,14 @@ def agregar_sorteo(sorteo_dict, DB_NAME):
     cursor = conn.cursor()
 
     # Obtener las columnas de la tabla
-    cursor.execute(f"PRAGMA table_info({'sorteos'})")
+    cursor.execute(f"PRAGMA table_info(sorteos)")
     columns_info = cursor.fetchall()
     columns_names = [column[1] for column in columns_info]
 
     # Verificar qué columnas no existen y agregarlas
     for key in sorteo_dict.keys():
         if key not in columns_names:
-            alter_query = f"ALTER TABLE {'sorteos'} ADD COLUMN {key}"
+            alter_query = f"ALTER TABLE sorteos ADD COLUMN {key}"
             cursor.execute(alter_query)
             columns_names.append(key)  # Actualizar la lista de columnas
 
@@ -71,12 +72,32 @@ def agregar_sorteo(sorteo_dict, DB_NAME):
     placeholders = ", ".join(["?" for _ in columns_names])
 
     # Insertar datos
-    insert_query = f"INSERT INTO {'sorteos'} ({keys}) VALUES ({placeholders})"
+    insert_query = f"INSERT INTO sorteos ({keys}) VALUES ({placeholders})"
     cursor.execute(insert_query, values)
+
+    # Actualizar índices para cada sufijo
+    sufijos = ['loto', 'RECARGADO', 'REVANCHA', 'DESQUITE']
+    for sufijo in sufijos:
+        columnas = [f'n{i}_{sufijo}' for i in range(1, 7)]
+        cursor.execute(f"SELECT {', '.join(columnas)} FROM sorteos WHERE sorteo_id = ?", (sorteo_dict['sorteo_id'],))
+        numeros = cursor.fetchone()
+        
+        # Verificar si todos los valores son nulos
+        if all(n is None for n in numeros):
+            valor_insertar = None
+        else:
+            # Calcular el índice
+            if None in numeros:
+                valor_insertar = None
+            else:
+                valor_insertar = get_combination_index(numeros)
+        
+        cursor.execute(f"UPDATE sorteos SET {sufijo}_posicion_en_4_5 = ? WHERE sorteo_id = ?", (valor_insertar, sorteo_dict['sorteo_id']))
 
     # Guardar cambios y cerrar conexión
     conn.commit()
     conn.close()
+
 
 def calcular_dia_siguiente():
     """
@@ -383,6 +404,27 @@ def get_info_from_sorteo():
     winners_and_amounts = sorteo_content_list[sorteo_content_list.index('DivisiónMontoGanadores')+1:]
     dict_final = crear_dict_sorteo(results, winners_and_amounts)
     return dict_final
+
+def ordenar_tabla_por_sorteo_id(DB_NAME):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    # Crear una tabla temporal ordenada por sorteo_id
+    cursor.execute('''
+        CREATE TABLE sorteos_ordenados AS
+        SELECT * FROM sorteos
+        ORDER BY sorteo_id ASC
+    ''')
+
+    # Eliminar la tabla original
+    cursor.execute('DROP TABLE sorteos')
+
+    # Renombrar la tabla ordenada a la original
+    cursor.execute('ALTER TABLE sorteos_ordenados RENAME TO sorteos')
+
+    conn.commit()
+    conn.close()
+
 
 def prepare_screen():
     py.moveTo(1380, 540)

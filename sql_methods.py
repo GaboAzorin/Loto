@@ -1,6 +1,7 @@
 from collections import Counter
 from methods import get_combination_index
 import sqlite3
+import pandas as pd
 
 
 def agregar_columna(db_path, tabla, nombre_columna, tipo_dato="INTEGER"):
@@ -175,31 +176,47 @@ def guardar_indices_en_db(db_path, sufijo):
     conexion = sqlite3.connect(db_path)
     cursor = conexion.cursor()
 
-    columnas = [f'n{i}_{sufijo}' for i in range(1, 7)]
-    cursor.execute(f"SELECT sorteo_id, {', '.join(columnas)} FROM sorteos")
-    sorteos = cursor.fetchall()
+    # Obtener todos los sorteo_id de la tabla 'sorteos'
+    cursor.execute("SELECT sorteo_id FROM sorteos")
+    sorteos_ids = cursor.fetchall()
+    sorteos_ids = [id[0] for id in sorteos_ids]
 
-    for sorteo in sorteos:
-        sorteo_id = sorteo[0]  # Obtener el ID del sorteo
-        numeros = sorteo[1:]   # Obtener los números del sorteo
+    # Obtener todos los sorteo_id de la tabla 'tabla_4_5_millones'
+    cursor.execute("SELECT sorteo_id FROM tabla_4_5_millones")
+    tabla_ids = cursor.fetchall()
+    tabla_ids = [id[0] for id in tabla_ids]
 
-        # Comprueba si ya existe un valor para normal_ordenada_{sufijo} en la tabla para ese sorteo_id
-        cursor.execute(f"SELECT normal_ordenada_{sufijo} FROM tabla_4_5_millones WHERE sorteo_id = ?", (sorteo_id,))
-        resultado = cursor.fetchone()
+    # Identificar los sorteo_id faltantes en 'tabla_4_5_millones'
+    faltantes_ids = list(set(sorteos_ids) - set(tabla_ids))
 
-        if resultado is None or resultado[0] is None:  # Si no hay un valor existente
-            if None in numeros:  # Si hay algún valor nulo en el conjunto
-                valor_insertar = None
-            else:
-                valor_insertar = get_combination_index(numeros)
-            
-            cursor.execute(f"UPDATE tabla_4_5_millones SET normal_ordenada_{sufijo} = ? WHERE sorteo_id = ?", (valor_insertar, sorteo_id))
+    # Agregar los sorteos faltantes a 'tabla_4_5_millones'
+    for sorteo_id in faltantes_ids:
+        cursor.execute("SELECT * FROM sorteos WHERE sorteo_id = ?", (sorteo_id,))
+        sorteo = cursor.fetchone()
+        numeros = sorteo[5:11]  # Suponiendo que los números del sorteo están en las columnas 5 a 10
+        
+        # Insertar el sorteo en 'tabla_4_5_millones'
+        cursor.execute("INSERT INTO tabla_4_5_millones (sorteo_id) VALUES (?)", (sorteo_id,))
+        
+        # Calcular el índice y actualizar la columna correspondiente
+        if None in numeros:
+            valor_insertar = None
         else:
-            print(f"El sorteo_id {sorteo_id} ya tiene un valor para normal_ordenada_{sufijo}, no se actualiza.")
-
-    conexion.commit()
+            valor_insertar = get_combination_index(numeros)
+        
+        cursor.execute(f"UPDATE tabla_4_5_millones SET normal_ordenada_{sufijo} = ? WHERE sorteo_id = ?", (valor_insertar, sorteo_id))
+    
+    # Obtener y mostrar los primeros registros de la tabla 'tabla_4_5_millones' después de la actualización
+    cursor.execute(f"SELECT * FROM tabla_4_5_millones LIMIT 10")
+    registros_actualizados = cursor.fetchall()
+    columnas_tabla = [description[0] for description in cursor.description]
+    
     cursor.close()
     conexion.close()
+    
+    # Mostrar los registros actualizados en un dataframe
+    df_registros_actualizados = pd.DataFrame(registros_actualizados, columns=columnas_tabla)
+    print(df_registros_actualizados)
 
 def numeros_comunes_por_criterios(db_path, **kwargs):
     """

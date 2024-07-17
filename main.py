@@ -9,12 +9,13 @@ import time
 # Configuración de la base de datos
 DB_NAME = 'loto.db'
 numeros_frecuentes_por_sorteo(DB_NAME, 'loto')
-#exit()
 #crear_table(DB_NAME)
 
-#agregar_columna(DB_NAME, 'sorteos', 'n6_loto_mas_comun')
-#guardar_indices_en_db(DB_NAME, 'DESQUITE')
+#agregar_columna(DB_NAME, 'sorteos', 'DESQUITE_posicion_en_4_5')
 
+
+# _ Guarda los índices del sorteo en la tabla de los 4.5 millones
+#guardar_indices_en_db(DB_NAME, 'loto')
 
 
 # Fecha del primer sorteo y su número
@@ -22,7 +23,7 @@ primer_sorteo = datetime.datetime(2016, 1, 3, 21, 0)
 primer_numero_sorteo = 3803
 
 # Mostrar mensaje
-#mostrar_mensaje_bienvenida(primer_sorteo, primer_numero_sorteo, DB_NAME)
+mostrar_mensaje_bienvenida(primer_sorteo, primer_numero_sorteo, DB_NAME)
 
 """print(agrupar_y_contar(DB_NAME, 2, 'normal_ordenada_loto'))
 print()
@@ -42,8 +43,10 @@ print(agrupar_y_contar(DB_NAME, 9, 'normal_ordenada_loto'))
 print()"""
 print(agrupar_y_contar(DB_NAME, 100, 'normal_ordenada_loto'))
 
+# AGREGAR SORTEOS.
+#add_sorteos_varios(1, DB_NAME)
+#numeros_frecuentes_por_sorteo(DB_NAME, 'loto')
 
-add_sorteos_varios(10, DB_NAME)
 
 print('\nAlgunas estadísticas:')
 #print('¿Se ha repetido algún resultado?')
