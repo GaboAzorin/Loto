@@ -5,6 +5,7 @@ import datetime
 import math
 import pyperclip as pc
 import re
+from collections import Counter
 from GAP_Utils.Utils import Play_end_mp3, click_button_on_screen, time_elapsed
 
 def add_sorteos_varios(turns: int, DB_NAME):
@@ -201,6 +202,53 @@ def calcular_sorteos_faltantes(primer_sorteo, primer_numero_sorteo, DB_NAME):
 
     conn.close()
     return total_sorteos + primer_numero_sorteo + 1, sorteos_faltantes
+
+def cluster_mas_comun(db_path, day=None, week_day=None, month=None, year=None):
+    # Conectarse a la base de datos
+    conexion = sqlite3.connect(db_path)
+    cursor = conexion.cursor()
+
+    # Construir la consulta SQL con filtros opcionales
+    query = "SELECT n1_loto, n2_loto, n3_loto, n4_loto, n5_loto, n6_loto FROM sorteos WHERE 1=1"
+    params = []
+
+    if day is not None:
+        query += " AND day = ?"
+        params.append(day)
+    if week_day is not None:
+        query += " AND week_day = ?"
+        params.append(week_day.capitalize())  # Suponiendo que los días están capitalizados en la BD
+    if month is not None:
+        query += " AND month = ?"
+        params.append(month)
+    if year is not None:
+        query += " AND year = ?"
+        params.append(year)
+
+    cursor.execute(query, params)
+    sorteos = cursor.fetchall()
+
+    # Calcular el índice de combinación y determinar el cluster
+    total_combinaciones = 4496388  # Aproximadamente 4.5 millones
+    num_clusters = 50
+    tamano_cluster = total_combinaciones // num_clusters
+    contadores = Counter()
+
+    for sorteo in sorteos:
+        # Calcular el índice de combinación
+        if None in sorteo:
+            continue
+        indice = get_combination_index(sorteo)
+        
+        # Determinar el cluster correspondiente
+        cluster = (indice - 1) // tamano_cluster + 1
+        contadores[cluster] += 1
+
+    # Encontrar el cluster más común
+    cluster_mas_frecuente = contadores.most_common(1)[0] if contadores else None
+
+    conexion.close()
+    return cluster_mas_frecuente
 
 def mostrar_mensaje_bienvenida(primer_sorteo, primer_numero_sorteo, DB_NAME):
     fecha_actual = datetime.datetime.now()

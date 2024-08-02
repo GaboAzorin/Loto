@@ -393,3 +393,53 @@ def numeros_frecuentes_por_sorteo(db_path, tipo_sorteo):
 
     print("Datos guardados correctamente en la base de datos.")
 
+# _______ Resultados repetidos:
+
+def resultados_repetidos_adaptable(db_path, juego1, juego2):
+    """
+    Verifica si algún resultado de dos juegos se ha repetido en la base de datos.
+    
+    Args:
+    db_path (str): Ruta al archivo de la base de datos SQLite.
+    juego1 (str): Nombre del primer juego (e.g., "loto").
+    juego2 (str): Nombre del segundo juego (e.g., "RECARGADO").
+    
+    Returns:
+    list: Lista de combinaciones repetidas con el número de repeticiones.
+    """
+    # Conectarse a la base de datos
+    conexion = sqlite3.connect(db_path)
+    cursor = conexion.cursor()
+
+    # Consultar todas las combinaciones de números sorteados para los juegos especificados
+    columnas_juego1 = [f"n{i}_{juego1}" for i in range(1, 7)]
+    columnas_juego2 = [f"n{i}_{juego2}" for i in range(1, 7)]
+
+    # Crear la consulta para obtener combinaciones de ambos juegos
+    query = f"""
+        SELECT {', '.join(columnas_juego1 + columnas_juego2)}
+        FROM sorteos
+        WHERE { ' AND '.join([f'{col} IS NOT NULL' for col in columnas_juego1 + columnas_juego2]) }
+    """
+    cursor.execute(query)
+    sorteos = cursor.fetchall()
+
+    # Contador para contar combinaciones
+    contador_combinaciones = Counter()
+
+    # Contar cada combinación
+    for sorteo in sorteos:
+        # Separar los números de ambos juegos
+        combinacion1 = tuple(sorted(sorteo[:6]))
+        combinacion2 = tuple(sorted(sorteo[6:]))
+
+        # Registrar las combinaciones en el contador
+        contador_combinaciones[(combinacion1, juego1)] += 1
+        if juego1 != juego2:
+            contador_combinaciones[(combinacion2, juego2)] += 1
+
+    # Filtrar combinaciones que se han repetido
+    combinaciones_repetidas = [(comb, count) for comb, count in contador_combinaciones.items() if count > 1]
+
+    conexion.close()
+    return combinaciones_repetidas
