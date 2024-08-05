@@ -1,10 +1,12 @@
 import datetime
-import time
 from methods import *
 from sql_methods import *
 import pyautogui as py
 import time
+from predictive_methods import *
+from GAP_Utils.Utils import time_elapsed
 
+a = time.time()
 
 # Configuración de la base de datos
 DB_NAME = 'loto.db'
@@ -106,36 +108,77 @@ if cluster_frecuente:
 else:
     print(f'    Cluster más común en este año ({actual_year}): No se encontraron resultados para el cluster más común en este año ({actual_year}).')
 
+# Resultados repetidos
+
 print('\n\n¿Se han repetido resultados?\n')
 
-repetidos = resultados_repetidos_adaptable(DB_NAME, 'loto', 'loto')
-if repetidos:
-    print(f"- Se han encontrado combinaciones repetidas en el loto:")
-    for comb, count in repetidos:
-        print(f"Combinación {comb} se ha repetido {count} veces")
-else:
-    print(f"- No se encontraron combinaciones repetidas en el loto.")
+resultados_repetidos_adaptable(DB_NAME, 'loto', 'loto')
+resultados_repetidos_adaptable(DB_NAME, 'loto', 'RECARGADO')
+resultados_repetidos_adaptable(DB_NAME, 'loto', 'REVANCHA')
+resultados_repetidos_adaptable(DB_NAME, 'loto', 'DESQUITE')
+resultados_repetidos_adaptable(DB_NAME, 'loto', 'JUBILAZO')
+resultados_repetidos_adaptable(DB_NAME, 'loto', 'JUBILAZO_2')
+resultados_repetidos_adaptable(DB_NAME, 'loto', 'JUBILAZO_3')
+resultados_repetidos_adaptable(DB_NAME, 'loto', 'JUBILAZO_4')
+resultados_repetidos_adaptable(DB_NAME, 'loto', 'JUBILAZO_5')
+resultados_repetidos_adaptable(DB_NAME, 'loto', 'JUBILAZO_6')
+resultados_repetidos_adaptable(DB_NAME, 'loto', 'JUBILAZO_7')
 
-repetidos = resultados_repetidos_adaptable(DB_NAME, 'loto', 'RECARGADO')
-if repetidos:
-    print(f"- Se han encontrado combinaciones repetidas entre el loto y el recargado:")
-    for comb, count in repetidos:
-        print(f"Combinación {comb} se ha repetido {count} veces")
-else:
-    print(f"- No se encontraron combinaciones repetidas entre el loto y el recargado.")
+resultados_repetidos_adaptable(DB_NAME, 'RECARGADO', 'REVANCHA')
+resultados_repetidos_adaptable(DB_NAME, 'RECARGADO', 'DESQUITE')
+resultados_repetidos_adaptable(DB_NAME, 'RECARGADO', 'JUBILAZO')
+resultados_repetidos_adaptable(DB_NAME, 'RECARGADO', 'JUBILAZO_2')
+resultados_repetidos_adaptable(DB_NAME, 'RECARGADO', 'JUBILAZO_3')
+resultados_repetidos_adaptable(DB_NAME, 'RECARGADO', 'JUBILAZO_4')
+resultados_repetidos_adaptable(DB_NAME, 'RECARGADO', 'JUBILAZO_5')
+resultados_repetidos_adaptable(DB_NAME, 'RECARGADO', 'JUBILAZO_6')
+resultados_repetidos_adaptable(DB_NAME, 'RECARGADO', 'JUBILAZO_7')
 
-repetidos = resultados_repetidos_adaptable(DB_NAME, 'loto', 'REVANCHA')
-if repetidos:
-    print(f"- Se han encontrado combinaciones repetidas entre el loto y el revancha:")
-    for comb, count in repetidos:
-        print(f"Combinación {comb} se ha repetido {count} veces")
-else:
-    print(f"- No se encontraron combinaciones repetidas entre el loto y el revancha.")
+resultados_repetidos_adaptable(DB_NAME, 'REVANCHA', 'DESQUITE')
+resultados_repetidos_adaptable(DB_NAME, 'REVANCHA', 'JUBILAZO')
+resultados_repetidos_adaptable(DB_NAME, 'REVANCHA', 'JUBILAZO_2')
+resultados_repetidos_adaptable(DB_NAME, 'REVANCHA', 'JUBILAZO_3')
+resultados_repetidos_adaptable(DB_NAME, 'REVANCHA', 'JUBILAZO_4')
+resultados_repetidos_adaptable(DB_NAME, 'REVANCHA', 'JUBILAZO_5')
+resultados_repetidos_adaptable(DB_NAME, 'REVANCHA', 'JUBILAZO_6')
+resultados_repetidos_adaptable(DB_NAME, 'REVANCHA', 'JUBILAZO_7')
 
-repetidos = resultados_repetidos_adaptable(DB_NAME, 'loto', 'DESQUITE')
-if repetidos:
-    print(f"- Se han encontrado combinaciones repetidas entre el loto y el desquite:")
-    for comb, count in repetidos:
-        print(f"Combinación {comb} se ha repetido {count} veces")
-else:
-    print(f"- No se encontraron combinaciones repetidas entre el loto y el desquite.")
+resultados_repetidos_adaptable(DB_NAME, 'DESQUITE', 'JUBILAZO')
+resultados_repetidos_adaptable(DB_NAME, 'DESQUITE', 'JUBILAZO_2')
+resultados_repetidos_adaptable(DB_NAME, 'DESQUITE', 'JUBILAZO_3')
+resultados_repetidos_adaptable(DB_NAME, 'DESQUITE', 'JUBILAZO_4')
+resultados_repetidos_adaptable(DB_NAME, 'DESQUITE', 'JUBILAZO_5')
+resultados_repetidos_adaptable(DB_NAME, 'DESQUITE', 'JUBILAZO_6')
+resultados_repetidos_adaptable(DB_NAME, 'DESQUITE', 'JUBILAZO_7')
+
+
+
+# PREDICCIONES
+
+
+print('\n     ---   ---   --__--__--__\n\nPREDICCIONES\n\n     ---   ---   --__--__--__\n')
+# Generar combinaciones nuevas
+nuevas_combinaciones = generar_combinaciones_nuevas(DB_NAME, 'loto')
+print("\nCombinaciones nuevas que nunca se han dado:")
+for comb in nuevas_combinaciones:
+    print(comb)
+
+# Generar combinaciones por cluster
+combinaciones_cluster = generar_combinaciones_por_cluster(DB_NAME, 'loto')
+print("\nCombinaciones basadas en el cluster más común:")
+for comb in combinaciones_cluster:
+    print(comb)
+
+
+combinaciones = generar_combinaciones_con_numeros_comunes(DB_NAME, 'loto')
+print("\nCombinaciones probables que nunca se han dado con los 3 números más comunes del último año:")
+for comb in combinaciones:
+    print(comb)
+
+b = time.time()
+
+print(time_elapsed(a, b))
+
+juegos = ["loto", "RECARGADO", "REVANCHA", "DESQUITE", "JUBILAZO", "JUBILAZO_2", "JUBILAZO_3", "JUBILAZO_4", "JUBILAZO_5", "JUBILAZO_6", "JUBILAZO_7"]
+matriz = crear_matriz_repeticiones(DB_NAME, juegos)
+visualizar_matriz(matriz, juegos)

@@ -3,6 +3,8 @@ from methods import get_combination_index
 import sqlite3
 import pandas as pd
 from openpyxl import load_workbook
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 def agregar_columna(db_path, tabla, nombre_columna, tipo_dato="INTEGER"):
@@ -398,12 +400,12 @@ def numeros_frecuentes_por_sorteo(db_path, tipo_sorteo):
 def resultados_repetidos_adaptable(db_path, juego1, juego2):
     """
     Verifica si algún resultado de dos juegos se ha repetido en la base de datos.
-    
+
     Args:
     db_path (str): Ruta al archivo de la base de datos SQLite.
     juego1 (str): Nombre del primer juego (e.g., "loto").
     juego2 (str): Nombre del segundo juego (e.g., "RECARGADO").
-    
+
     Returns:
     list: Lista de combinaciones repetidas con el número de repeticiones.
     """
@@ -415,9 +417,12 @@ def resultados_repetidos_adaptable(db_path, juego1, juego2):
     columnas_juego1 = [f"n{i}_{juego1}" for i in range(1, 7)]
     columnas_juego2 = [f"n{i}_{juego2}" for i in range(1, 7)]
 
+    # Añadir las columnas adicionales para obtener el sorteo_id y la fecha
+    columnas_adicionales = ["sorteo_id", "week_day", "year", "month", "day"]
+
     # Crear la consulta para obtener combinaciones de ambos juegos
     query = f"""
-        SELECT {', '.join(columnas_juego1 + columnas_juego2)}
+        SELECT {', '.join(columnas_adicionales + columnas_juego1 + columnas_juego2)}
         FROM sorteos
         WHERE { ' AND '.join([f'{col} IS NOT NULL' for col in columnas_juego1 + columnas_juego2]) }
     """
@@ -425,21 +430,134 @@ def resultados_repetidos_adaptable(db_path, juego1, juego2):
     sorteos = cursor.fetchall()
 
     # Contador para contar combinaciones
-    contador_combinaciones = Counter()
+    combinaciones_info = {}
 
     # Contar cada combinación
     for sorteo in sorteos:
-        # Separar los números de ambos juegos
-        combinacion1 = tuple(sorted(sorteo[:6]))
-        combinacion2 = tuple(sorted(sorteo[6:]))
+        # Extraer información adicional
+        sorteo_id, week_day, year, month, day = sorteo[:5]
+        fecha = f"{week_day} {day} de {month} del {year}"
 
-        # Registrar las combinaciones en el contador
-        contador_combinaciones[(combinacion1, juego1)] += 1
-        if juego1 != juego2:
-            contador_combinaciones[(combinacion2, juego2)] += 1
+        # Separar los números de ambos juegos
+        combinacion1 = tuple(sorted(sorteo[5:11]))
+        combinacion2 = tuple(sorted(sorteo[11:17]))
+
+        # Verificar si es el mismo juego comparándose a sí mismo y no duplicar
+        if juego1 == juego2:
+            if combinacion1 not in combinaciones_info:
+                combinaciones_info[combinacion1] = []
+            combinaciones_info[combinacion1].append((juego1, sorteo_id, fecha))
+        else:
+            # Registrar en combinaciones_info solo si son diferentes juegos
+            if combinacion1 not in combinaciones_info:
+                combinaciones_info[combinacion1] = []
+            combinaciones_info[combinacion1].append((juego1, sorteo_id, fecha))
+
+            if combinacion2 not in combinaciones_info:
+                combinaciones_info[combinacion2] = []
+            combinaciones_info[combinacion2].append((juego2, sorteo_id, fecha))
 
     # Filtrar combinaciones que se han repetido
-    combinaciones_repetidas = [(comb, count) for comb, count in contador_combinaciones.items() if count > 1]
+    combinaciones_repetidas = []
+    for comb, info_list in combinaciones_info.items():
+        if len(info_list) > 1:
+            # Asegurarse de que las combinaciones sean de sorteos diferentes
+            juegos_set = set(info[0] for info in info_list)
+            if len(juegos_set) > 1 or (juego1 == juego2 and len(info_list) > 1):
+                combinaciones_repetidas.append((comb, info_list))
 
     conexion.close()
-    return combinaciones_repetidas
+
+    # Imprimir resultados
+    if combinaciones_repetidas:
+        print(f"- Se han encontrado combinaciones repetidas entre {juego1} y {juego2}:")
+        for comb, info_list in combinaciones_repetidas:
+            print(f"  - Combinación {comb} se ha repetido {len(info_list)} vez{'es' if len(info_list) > 1 else ''}:")
+            for juego, sorteo_id, fecha in info_list:
+                print(f"    - {juego}: sorteo {sorteo_id} - {fecha}")
+    #else:
+        #print(f"- No se encontraron combinaciones repetidas entre {juego1} y {juego2}.")
+
+def crear_matriz_repeticiones(db_path, juegos):
+    """
+    Crea una matriz de repeticiones de combinaciones entre diferentes juegos.
+
+    Args:
+    db_path (str): Ruta al archivo de la base de datos SQLite.
+    juegos (list): Lista de nombres de los juegos (e.g., ["loto", "RECARGADO", "REVANCHA"]).
+
+    Returns:
+    np.ndarray: Matriz de repeticiones.
+    """
+    # Inicializar la matriz de repeticiones
+    num_juegos = len(juegos)
+    matriz_repeticiones = np.zeros((num_juegos, num_juegos), dtype=int)
+
+    # Función auxiliar para obtener combinaciones repetidas
+    def obtener_repeticiones(juego1, juego2):
+        conexion = sqlite3.connect(db_path)
+        cursor = conexion.cursor()
+
+        columnas_juego1 = [f"n{i}_{juego1}" for i in range(1, 7)]
+        columnas_juego2 = [f"n{i}_{juego2}" for i in range(1, 7)]
+        query = f"""
+            SELECT {', '.join(columnas_juego1 + columnas_juego2)}
+            FROM sorteos
+            WHERE { ' AND '.join([f'{col} IS NOT NULL' for col in columnas_juego1 + columnas_juego2]) }
+        """
+        cursor.execute(query)
+        sorteos = cursor.fetchall()
+        conexion.close()
+
+        contador_combinaciones_juego1 = Counter()
+        contador_combinaciones_juego2 = Counter()
+
+        for sorteo in sorteos:
+            combinacion1 = tuple(sorted(sorteo[:6]))
+            combinacion2 = tuple(sorted(sorteo[6:]))
+
+            if juego1 == juego2:
+                contador_combinaciones_juego1[combinacion1] += 1
+            else:
+                contador_combinaciones_juego1[combinacion1] += 1
+                contador_combinaciones_juego2[combinacion2] += 1
+
+        combinaciones_repetidas = []
+        if juego1 == juego2:
+            combinaciones_repetidas = [comb for comb, count in contador_combinaciones_juego1.items() if count > 1]
+        else:
+            combinaciones_repetidas = [comb for comb in contador_combinaciones_juego1 if comb in contador_combinaciones_juego2]
+
+        return len(combinaciones_repetidas)
+
+    # Rellenar la matriz con los números de repeticiones
+    for i, juego1 in enumerate(juegos):
+        for j, juego2 in enumerate(juegos):
+            if i <= j:  # Solo calcular para una mitad de la matriz (simetría)
+                repeticiones = obtener_repeticiones(juego1, juego2)
+                matriz_repeticiones[i, j] = repeticiones
+                matriz_repeticiones[j, i] = repeticiones
+
+    return matriz_repeticiones
+
+def visualizar_matriz(matriz, juegos):
+    """
+    Visualiza la matriz de repeticiones usando matplotlib.
+
+    Args:
+    matriz (np.ndarray): Matriz de repeticiones.
+    juegos (list): Lista de nombres de los juegos.
+    """
+    fig, ax = plt.subplots()
+    cax = ax.matshow(matriz, cmap='viridis')
+
+    for (i, j), val in np.ndenumerate(matriz):
+        ax.text(j, i, f'{val}', ha='center', va='center', color='white')
+
+    plt.xticks(range(len(juegos)), juegos, rotation=90)
+    plt.yticks(range(len(juegos)), juegos)
+    fig.colorbar(cax)
+    plt.xlabel('Juego')
+    plt.ylabel('Juego')
+    plt.title('Matriz de Repeticiones de Combinaciones')
+    plt.show()
