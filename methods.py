@@ -203,6 +203,45 @@ def calcular_sorteos_faltantes(primer_sorteo, primer_numero_sorteo, DB_NAME):
     conn.close()
     return total_sorteos + primer_numero_sorteo + 1, sorteos_faltantes
 
+def compare_predictions(last_result:list, predicted_result:list):
+    """
+    Compara dos listas de resultados de lotería y calcula un porcentaje de proximidad.
+    
+    Parámetros:
+        last_result (list): Lista de 6 números reales de la lotería.
+        predicted_result (list): Lista de 6 números predichos.
+    
+    Retorna:
+        float: Porcentaje de proximidad entre ambas listas.
+        str: Explicación detallada del cálculo.
+    """
+    # Validar las entradas
+    if len(last_result) != 6 or len(predicted_result) != 6:
+        return None, "Ambas listas deben tener exactamente 6 elementos."
+    if any(x < 1 or x > 41 for x in last_result + predicted_result):
+        return None, "Los valores de ambas listas deben estar en el rango 1-41."
+
+    # Coincidencias exactas (sin importar posición)
+    coincidences = len(set(last_result) & set(predicted_result))
+    coincidences_score = (coincidences / 6) * 100  # 100% si hay 6 coincidencias exactas
+
+    # Distancia promedio entre pares (A con A, B con B, etc.)
+    distances = [abs(last_result[i] - predicted_result[i]) for i in range(6)]
+    avg_distance = sum(distances) / len(distances)
+    penalty = (1 - avg_distance / 40) * 10  # Normalizar a 10%
+
+    # Puntaje total
+    final_score = min(100, coincidences_score + penalty)  # Máximo 100%
+
+    # Generar explicación
+    explanation = (
+        f"Coincidencias exactas: {coincidences} de 6, aportando un {coincidences_score:.2f}%.\n"
+        f"Distancia promedio entre pares: {avg_distance:.2f}, con una penalización ajustada de {penalty:.2f}%.\n"
+        f"Porcentaje final de proximidad: {final_score:.2f}%."
+    )
+
+    return final_score, explanation
+
 def cluster_mas_comun(db_path, day=None, week_day=None, month=None, year=None):
     # Conectarse a la base de datos
     conexion = sqlite3.connect(db_path)
