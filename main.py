@@ -18,8 +18,9 @@ DB_NAME = 'loto.db'
 #guardar_indices_en_db(DB_NAME, 'loto')
 
 # _ _ _ _ _ _ _ AGREGAR SORTEOS.
-#add_sorteos_varios(1, DB_NAME)
-#numeros_frecuentes_por_sorteo(DB_NAME, 'loto')
+add_sorteos_varios(10, DB_NAME)
+numeros_frecuentes_por_sorteo(DB_NAME, 'loto')
+
 # _ _ _ _ _ _ _Convertir la base de datos en un excel
 convertir_db_a_excel(DB_NAME, 'excel.xlsx')
 
