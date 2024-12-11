@@ -11,5 +11,6 @@ day, month, year, week_day, month_str, hour = get_full_date()
 welcome, dayToCheck, monthToCheck = welcome_phrase(day, month, year, week_day, month_str, hour)
 
 st.write(welcome)
+st.write(f'Día que se eligió: {dayToCheck}.\nMes que se eligió: {monthToCheck}')
 
 st.write(get_sorteo(dayToCheck, monthToCheck, 2024))
