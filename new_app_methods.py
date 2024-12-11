@@ -103,5 +103,9 @@ def welcome_phrase(day, month, year, week_day, month_str, hour):
     else: # Si hoy no hay sorteo
         phrase_to_add = f'Hoy no corresponde sorteo, así que te muestro el sorteo del {past_day} pasado:'
         phrase += phrase_to_add
+        if week_day == 'lunes' or week_day == 'miércoles' or week_day == 'viernes':
+            day_to_return = int(day)-1
+        elif week_day == 'sábado':
+            day_to_return = int(day)-2
     
     return phrase, day_to_return, month_to_return
