@@ -92,7 +92,7 @@ def welcome_phrase(day, month, year, week_day, month_str, hour):
     if week_day == 'martes' or week_day == 'jueves' or week_day == 'domingo':
         if int(hour) <= 20:
             phrase_to_add = f'Aún no se ha tirado el sorteo de hoy, así que te muestro el sorteo del {past_day} pasado:'
-            if week_day is 'martes' or week_day is 'jueves': day_to_return = int(day)-2
+            if week_day == 'martes' or week_day == 'jueves': day_to_return = int(day)-2
             else: day_to_return = int(day)-3
 
             if int(day) <= 2: month_to_return = str(int(month)-1)
