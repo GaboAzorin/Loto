@@ -8,8 +8,6 @@ def get_full_date():
     chile_tz = pytz.timezone('America/Santiago')
     today_date = datetime.now(chile_tz)
     
-    today_date = datetime.now()
-    
     day = today_date.strftime("%d")  # Día en formato de dos dígitos
     month = today_date.strftime("%m")  # Mes en formato de dos dígitos
     year = today_date.strftime("%Y")  # Año en formato de cuatro dígitos
