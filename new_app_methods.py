@@ -1,8 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+import pytz
 
 def get_full_date():
+    # Configurar la zona horaria para Santiago de Chile
+    chile_tz = pytz.timezone('America/Santiago')
+    today_date = datetime.now(chile_tz)
+    
     today_date = datetime.now()
     
     day = today_date.strftime("%d")  # Día en formato de dos dígitos
