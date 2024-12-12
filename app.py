@@ -10,8 +10,9 @@ day, month, year, week_day, month_str, hour = get_full_date()
 
 welcome, dayToCheck, monthToCheck = welcome_phrase(day, month, year, week_day, month_str, hour)
 
-st.write(dayToCheck)
-st.write(monthToCheck)
+str_day = f'El día a revisar es el {dayToCheck} del mes {monthToCheck}.'
+str_hour = f'La hora que se consideró es {hour}.'
+st.write(str_day)
 st.write(welcome)
 
 st.write(get_sorteo(dayToCheck, monthToCheck, 2024))
