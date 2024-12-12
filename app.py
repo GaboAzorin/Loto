@@ -13,6 +13,7 @@ welcome, dayToCheck, monthToCheck = welcome_phrase(day, month, year, week_day, m
 str_day = f'El día a revisar es el {dayToCheck} del mes {monthToCheck}.'
 str_hour = f'La hora que se consideró es {hour}.'
 st.write(str_day)
+st.write(str_hour)
 st.write(welcome)
 
 st.write(get_sorteo(dayToCheck, monthToCheck, 2024))
