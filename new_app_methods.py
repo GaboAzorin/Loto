@@ -57,6 +57,29 @@ def get_full_date():
     
     return day, month, year, week_day, month_str, hour
 
+import math
+
+def get_nums_from_index(index):
+    if index < 1 or index > math.comb(41,6):
+        raise ValueError("Índice fuera de [1..4496388].")
+    
+    r = 6
+    n_max = 41
+    combination = []
+    current = 1  # el menor valor que podemos colocar en la siguiente posición
+
+    for i in range(r):
+        for num in range(current, n_max - (r - i) + 2):
+            c = math.comb(n_max - num, r - i - 1)
+            if index <= c:
+                combination.append(num)
+                current = num + 1
+                break
+            else:
+                index -= c
+
+    return combination
+
 def get_sorteo(day, month, year):
     url = 'https://resultados-de-loteria.com/loto-chile/resultados/' + str(day) + '-' + str(month) + '-' + str(year)
 
@@ -66,6 +89,16 @@ def get_sorteo(day, month, year):
         soup = BeautifulSoup(response.content, 'html.parser')
         numbers = soup.find_all('ul', class_='balls')
         numbers_str = [ul.text.strip() for ul in numbers]
+        
+        # Encontrar si alguien se ganó el premio
+        winner = soup.find('table', class_='resultsTable noHover mobFormat')
+        winner = winner.find_all('td', class_='nowrap')
+        final_winners = str(winner[2].text)
+        if final_winners.find('Acumulado') == 1:
+            winner = False
+        else:
+            winner = True
+        numbers_str.insert(0, winner)
         
     else:
         numbers_str = 'No pudimos meternos 😓: ' + str(response.status_code)
