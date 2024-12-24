@@ -2,3 +2,8 @@ bs4
 requests
 datetime
 pytz
+tensorflow
+numpy
+pandas
+sklearn
+joblib
