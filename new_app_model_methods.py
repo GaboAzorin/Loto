@@ -110,12 +110,6 @@ def build_model(input_dim):
     """
     layers = [
         Input(shape=(input_dim,)),
-        Dense(1024, activation='relu'),
-        Dropout(0.3),
-        Dense(512, activation='relu'),
-        Dropout(0.3),
-        Dense(256, activation='relu'),
-        Dropout(0.3),
         Dense(128, activation='relu'),
         Dropout(0.3),
         Dense(64, activation='relu'),

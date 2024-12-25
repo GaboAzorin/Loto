@@ -3,7 +3,7 @@ requests
 datetime
 pytz
 tensorflow
-numpy
-pandas
+numpy==1.26.0
+pandas==2.0.3
 sklearn
 joblib
