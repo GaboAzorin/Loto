@@ -280,7 +280,7 @@ if __name__ == "__main__":
     model, scalerX, scalerY, history, features = train_loto_model(
         df,
         epochs=50,
-        test_size=0.2,
+        test_size=0.3,
         batch_size=32
     )
 
