@@ -4,16 +4,13 @@ import joblib
 import tensorflow as tf
 import pandas as pd
 import numpy as np
+import sqlite3
 import math
 
 # Importamos la función que calcula la fecha/id
 # y también la de get_nums_from_index
 from new_app_methods import calcular_sorteo_id_y_fecha, get_nums_from_index, get_next_sorteo_date_chile
-from new_app_model_methods import (
-    generate_outdated_matrix,
-    predict_loto_value,
-    build_future_row_for_prediction
-)
+from new_app_model_methods import predict_loto_value, mapear_columnas
 
 def main():
     st.title("Predicción Loto")
@@ -22,8 +19,22 @@ def main():
 
     @st.cache_data
     def load_data():
-        df = generate_outdated_matrix()
-        return df
+        db_path = 'loto.db'
+        conn = sqlite3.connect(db_path)
+        query = "SELECT * FROM sorteos;"
+        df_crudo = pd.read_sql_query(query, conn)
+        conn.close()
+
+        df_crudo = mapear_columnas(df_crudo)
+
+        # Eliminar columnas que empiecen por "mpw_" o "aow_"
+        cols_a_eliminar = [
+            c for c in df_crudo.columns
+            if c.startswith("mpw_") or c.startswith("aow_")
+        ]
+        df_crudo.drop(columns=cols_a_eliminar, inplace=True, errors='ignore')
+
+        return df_crudo
 
     df = load_data()
 

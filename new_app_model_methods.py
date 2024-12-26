@@ -64,14 +64,31 @@ def mapear_columnas(df):
 
     return df
 
+# -----------------------------------------------------------------------------------
+# 2) Generar la matriz normal y la "outdated" desplazando los datos del sorteo anterior
+# -----------------------------------------------------------------------------------
+def load_normal_data():
+    db_path = 'loto.db'
+    conn = sqlite3.connect(db_path)
+    query = "SELECT * FROM sorteos;"
+    df_crudo = pd.read_sql_query(query, conn)
+    conn.close()
 
-# -----------------------------------------------------------------------------------
-# 2) Generar la matriz "outdated" desplazando los datos del sorteo anterior
-# -----------------------------------------------------------------------------------
+    df_crudo = mapear_columnas(df_crudo)
+
+    # Eliminar columnas que empiecen por "mpw_" o "aow_"
+    cols_a_eliminar = [
+        c for c in df_crudo.columns
+        if c.startswith("mpw_") or c.startswith("aow_")
+    ]
+    df_crudo.drop(columns=cols_a_eliminar, inplace=True, errors='ignore')
+
+    return df_crudo
+
 def generate_outdated_matrix():
     """
     Toma la base de datos loto.db y genera una matriz virtual con los datos cruzados con resultados anteriores:
-        - Toma un número de sorteo (ejemplo: 5202) con su fecha correcta (10 de diciembre de 2024) 
+        - Toma un número de sorteo (ejemplo: 5202) con su fecha correcta (10 de diciembre de 2024)
           y le asigna todos los valores del resultado anterior (del 5201).
     Devuelve la base en db, para su posterior uso (en entrenamiento de modelos).
     """
@@ -98,8 +115,15 @@ def generate_outdated_matrix():
         return df_virtual
 
     df_virtual = generar_tabla_virtual(df)
-    return df_virtual
 
+    # 2.4) Eliminar columnas que empiecen por "mpw_" o "aow_"  # <-- NUEVO
+    cols_a_eliminar = [
+        c for c in df_virtual.columns
+        if c.startswith("mpw_") or c.startswith("aow_")
+    ]
+    df_virtual.drop(columns=cols_a_eliminar, inplace=True)
+
+    return df_virtual
 
 # -----------------------------------------------------------------------------------
 # 3) Construir y describir el modelo (para nombrar archivos)
@@ -132,7 +156,6 @@ def get_architecture_name(layers_list):
         # Podrías agregar info de Dropout, etc.
     return "_".join(arch_parts)
 
-
 # -----------------------------------------------------------------------------------
 # 4) Entrenar el modelo con TODAS las columnas (excepto 'sorteo_id' y 'loto_posicion_en_4_5')
 # -----------------------------------------------------------------------------------
@@ -145,8 +168,19 @@ def train_loto_model(data, epochs=50, test_size=0.2, batch_size=32):
 
     # 4.1) Separar features y target
     all_cols = list(data.columns)
-    all_cols.remove('sorteo_id')
-    all_cols.remove('loto_posicion_en_4_5')
+
+    # 4.1.a) Eliminar cualquier columna 'mpw_' o 'aow_' (por si quedara alguna)  # <-- NUEVO
+    all_cols = [
+        c for c in all_cols
+        if not (c.startswith("mpw_") or c.startswith("aow_"))
+    ]
+
+    # 4.1.b) Remover 'sorteo_id' y 'loto_posicion_en_4_5' si estuvieran en la lista
+    if 'sorteo_id' in all_cols:
+        all_cols.remove('sorteo_id')
+    if 'loto_posicion_en_4_5' in all_cols:
+        all_cols.remove('loto_posicion_en_4_5')
+
     features = all_cols
     target = 'loto_posicion_en_4_5'
 
@@ -213,7 +247,6 @@ def train_loto_model(data, epochs=50, test_size=0.2, batch_size=32):
 
     return model, scaler_X, scaler_y, history, features
 
-
 # -----------------------------------------------------------------------------------
 # 5) Construir la fila ficticia para un sorteo futuro
 # -----------------------------------------------------------------------------------
@@ -234,6 +267,14 @@ def build_future_row_for_prediction(df, future_sorteo_id, future_day, future_mon
     row_futura['month'] = future_month
     row_futura['year'] = future_year
     row_futura['loto_posicion_en_4_5'] = np.nan
+
+    # Eliminar columnas que empiecen por "mpw_" o "aow_"  # <-- NUEVO
+    cols_a_eliminar = [
+        c for c in row_futura.columns
+        if c.startswith("mpw_") or c.startswith("aow_")
+    ]
+    row_futura.drop(columns=cols_a_eliminar, inplace=True)
+
     return row_futura
 
 
@@ -268,13 +309,13 @@ def predict_loto_value(model, scaler_X, scaler_y, df, features, future_sorteo_id
 
     return predictions[0][0]
 
-
 # -----------------------------------------------------------------------------------
 # 7) Flujo principal
 # -----------------------------------------------------------------------------------
 if __name__ == "__main__":
     # 7.1) Generar df (matriz virtual con SHIFT)
     df = generate_outdated_matrix()
+    df_normal = load_normal_data()
 
     # 7.2) Entrenar con TODAS las columnas (menos sorteo_id y la etiqueta)
     model, scalerX, scalerY, history, features = train_loto_model(
@@ -285,8 +326,8 @@ if __name__ == "__main__":
     )
 
     # 7.3) Ejemplo de predicción para un sorteo futuro
-    future_sorteo_id = 5208
-    future_day = 24
+    future_sorteo_id = 5206
+    future_day = 19
     future_month = 12
     future_year = 2024
 
@@ -294,7 +335,7 @@ if __name__ == "__main__":
         model,
         scalerX,
         scalerY,
-        df,
+        df_normal,
         features,
         future_sorteo_id,
         future_day,
